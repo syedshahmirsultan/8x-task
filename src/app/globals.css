@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Page canvas is a soft gray, not pure white — matches the density of a
+     catalog UI better and makes white product cards pop. */
+  --background: #eaeded;
+  --foreground: #0f1111;
+
+  /* Brand palette */
+  --color-brand: #131921; /* header */
+  --color-brand-secondary: #232f3e; /* sub-nav */
+  --color-brand-secondary-hover: #37475a;
+  --color-accent-cart: #ffd814; /* "Add to cart" yellow */
+  --color-accent-cart-hover: #f7ca00;
+  --color-accent-buy: #ffa41c; /* "Buy now" orange */
+  --color-accent-buy-hover: #fa8900;
+  --color-link: #007185; /* teal link color */
+  --color-link-hover: #c7511f;
+  --color-price: #b12704; /* deal/strikethrough price red */
+  --color-success: #007600; /* in-stock green */
+  --color-border: #d5d9d9;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--color-brand);
+  --color-brand-secondary: var(--color-brand-secondary);
+  --color-brand-secondary-hover: var(--color-brand-secondary-hover);
+  --color-accent-cart: var(--color-accent-cart);
+  --color-accent-cart-hover: var(--color-accent-cart-hover);
+  --color-accent-buy: var(--color-accent-buy);
+  --color-accent-buy-hover: var(--color-accent-buy-hover);
+  --color-link: var(--color-link);
+  --color-link-hover: var(--color-link-hover);
+  --color-price: var(--color-price);
+  --color-success: var(--color-success);
+  --color-border: var(--color-border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
