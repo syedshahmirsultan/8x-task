@@ -1,0 +1,5 @@
+node_modules/
+
+# Internal bookkeeping for the .agent-logs/ capture hooks (per-session counters,
+# not part of the log itself). .agent-logs/ is intentionally NOT ignored.
+.claude/hook-state/
