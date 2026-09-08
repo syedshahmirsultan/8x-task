@@ -9,7 +9,8 @@ function main() {
   const input = lib.readStdinJson();
   const sessionId = input.session_id || 'unknown-session';
   const projectDir = lib.resolveProjectDir(process.argv);
-  const statePath = lib.statePathFor(projectDir, sessionId);
+  const sharedRoot = lib.resolveSharedRoot(projectDir);
+  const statePath = lib.statePathFor(sharedRoot, sessionId);
 
   const state = lib.loadState(statePath);
   if (!state) {
