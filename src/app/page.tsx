@@ -1,44 +1,65 @@
 import Image from "next/image";
-import { Logo } from "@/components/logo";
-import { getFeaturedProducts } from "@/lib/products";
-import { formatPrice } from "@/lib/format";
+import Link from "next/link";
+import { ProductRail } from "@/components/product-rail";
+import { getAllCategories } from "@/lib/categories";
+import { getAllProducts, getFeaturedProducts } from "@/lib/products";
 
-// Temporary smoke-test page for Phase A (design tokens + mock data layer).
-// Replaced by the real home page (hero, category rails) in a later phase.
 export default function Home() {
-  const products = getFeaturedProducts(8);
+  const categories = getAllCategories();
+  const deals = getAllProducts().filter(
+    (p) => p.compareAtPrice !== undefined && p.compareAtPrice > p.price,
+  );
+  const featured = getFeaturedProducts(8);
 
   return (
-    <>
-      <header className="bg-brand px-4 py-3">
-        <Logo />
-      </header>
+    <main id="main-content" className="flex-1">
+      <section className="bg-gradient-to-br from-brand to-brand-secondary px-4 py-16 text-white">
+        <div className="mx-auto max-w-6xl">
+          <h1 className="text-3xl font-bold sm:text-4xl">
+            Everything you need, delivered fast.
+          </h1>
+          <p className="mt-3 max-w-xl text-gray-200">
+            Shop electronics, home goods, fashion, and more — all in one
+            place.
+          </p>
+          <Link
+            href="/products"
+            className="mt-6 inline-block cursor-pointer rounded-md bg-accent-cart px-6 py-3 font-semibold text-brand transition-colors hover:bg-accent-cart-hover"
+          >
+            Shop now
+          </Link>
+        </div>
+      </section>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
-        <h1 className="mb-6 text-xl font-semibold">Featured products</h1>
-        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {products.map((product) => (
-            <li
-              key={product.id}
-              className="rounded-lg border border-border bg-white p-3"
-            >
-              <div className="relative aspect-square overflow-hidden rounded-md bg-background">
-                <Image
-                  src={product.images[0]}
-                  alt={product.title}
-                  fill
-                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                  className="object-cover"
-                />
-              </div>
-              <p className="mt-2 line-clamp-2 text-sm">{product.title}</p>
-              <p className="mt-1 font-semibold text-price">
-                {formatPrice(product.price)}
-              </p>
+      <div className="mx-auto w-full max-w-6xl px-4 py-8">
+        <h2 className="mb-3 text-lg font-semibold">Shop by category</h2>
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          {categories.map((category) => (
+            <li key={category.id}>
+              <Link
+                href={`/category/${category.slug}`}
+                className="group block cursor-pointer overflow-hidden rounded-lg border border-border bg-white transition-shadow hover:shadow-lg"
+              >
+                <div className="relative aspect-square overflow-hidden">
+                  <Image
+                    src={category.image}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 16vw, 33vw"
+                    className="object-cover transition-transform duration-300 ease-out group-hover:scale-110"
+                  />
+                </div>
+                <p className="p-2 text-center text-sm font-medium transition-colors group-hover:text-link">
+                  {category.name}
+                </p>
+              </Link>
             </li>
           ))}
         </ul>
-      </main>
-    </>
+
+        <ProductRail title="Today's Deals" products={deals} />
+        <ProductRail title="Top Picks for You" products={featured} />
+      </div>
+    </main>
   );
 }

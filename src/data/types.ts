@@ -40,3 +40,22 @@ export interface Product {
   stock: number;
   variants?: ProductVariant[];
 }
+
+export type OrderStatus = "Processing" | "Shipped" | "Delivered";
+
+export interface OrderItem {
+  title: string;
+  quantity: number;
+  /** Snapshot of the price in cents at purchase time. */
+  price: Money;
+  image: string;
+}
+
+export interface Order {
+  id: string;
+  /** ISO timestamp. */
+  date: string;
+  status: OrderStatus;
+  items: OrderItem[];
+  total: Money;
+}
