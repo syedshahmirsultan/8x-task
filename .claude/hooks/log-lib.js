@@ -2,6 +2,7 @@
 // Kept dependency-free (no npm install step) since hooks must "just work".
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 function readStdinJson() {
   const data = fs.readFileSync(0, 'utf8');
@@ -87,6 +88,24 @@ function resolveProjectDir(argv) {
   return argv[2] || process.env.CLAUDE_PROJECT_DIR || process.cwd();
 }
 
+// Worktrees each have their own working directory, so a path relative to
+// CLAUDE_PROJECT_DIR lands in a different place per worktree. Git's
+// "common dir" is shared by the main checkout and every worktree cloned
+// from it, so resolving through that gives one shared log location
+// regardless of which worktree a session runs in.
+function resolveSharedRoot(projectDir) {
+  try {
+    const gitCommonDir = execFileSync(
+      'git',
+      ['rev-parse', '--path-format=absolute', '--git-common-dir'],
+      { cwd: projectDir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }
+    ).trim();
+    return path.dirname(gitCommonDir);
+  } catch (e) {
+    return projectDir;
+  }
+}
+
 function statePathFor(projectDir, sessionId) {
   const stateDir = path.join(projectDir, '.claude', 'hook-state');
   fs.mkdirSync(stateDir, { recursive: true });
@@ -150,6 +169,7 @@ module.exports = {
   lastAssistantText,
   filenameTimestamp,
   resolveProjectDir,
+  resolveSharedRoot,
   statePathFor,
   loadState,
   saveState,

@@ -12,11 +12,12 @@ function main() {
   // from raw stdin); keep both in case that changes across versions.
   const prompt = input.user_prompt !== undefined ? input.user_prompt : (input.prompt || '');
   const projectDir = lib.resolveProjectDir(process.argv);
+  const sharedRoot = lib.resolveSharedRoot(projectDir);
 
-  const logsDir = path.join(projectDir, '.agent-logs');
+  const logsDir = path.join(sharedRoot, '.agent-logs');
   fs.mkdirSync(logsDir, { recursive: true });
 
-  const statePath = lib.statePathFor(projectDir, sessionId);
+  const statePath = lib.statePathFor(sharedRoot, sessionId);
   const now = new Date();
   const nowIso = now.toISOString();
 
