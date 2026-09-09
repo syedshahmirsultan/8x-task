@@ -8,7 +8,7 @@ import {
   parseSearchParam,
   type SortOption,
 } from "@/lib/product-filters";
-import { getProductsByCategory, searchProducts } from "@/lib/products";
+import { getAllProducts, getProductsByCategory, searchProducts } from "@/lib/products";
 
 export default async function SearchPage(props: PageProps<"/search">) {
   const searchParams = await props.searchParams;
@@ -23,19 +23,17 @@ export default async function SearchPage(props: PageProps<"/search">) {
     getAllCategories(),
   ]);
 
-  // An empty query with a category picked in the search bar's dropdown
-  // should browse that category, not show nothing — only fall back to the
-  // "enter a search term" prompt when there's neither a query nor a category.
+  // An empty query browses instead of showing nothing — scoped to the
+  // selected category, or the whole catalog when "All" is selected.
   let matches: Product[];
   if (query) {
     matches = await searchProducts(query);
   } else if (category) {
     matches = await getProductsByCategory(category.id);
   } else {
-    matches = [];
+    matches = await getAllProducts();
   }
 
-  const hasResults = Boolean(query || category);
   const products = filterAndSortProducts(matches, {
     category: category?.id,
     minPrice,
@@ -58,20 +56,12 @@ export default async function SearchPage(props: PageProps<"/search">) {
       </aside>
       <div>
         <h1 className="mb-4 text-xl font-semibold">
-          {query ? `Results for "${query}"` : (category?.name ?? "Search")}
-          {hasResults && (
-            <span className="ml-2 text-sm font-normal text-gray-500">
-              {products.length} results
-            </span>
-          )}
+          {query ? `Results for "${query}"` : (category?.name ?? "All Products")}
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            {products.length} results
+          </span>
         </h1>
-        {hasResults ? (
-          <ProductGrid products={products} />
-        ) : (
-          <p className="text-sm text-gray-600">
-            Enter a search term above to find products.
-          </p>
-        )}
+        <ProductGrid products={products} />
       </div>
     </main>
   );
