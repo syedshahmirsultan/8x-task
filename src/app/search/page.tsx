@@ -1,5 +1,6 @@
 import { ProductFilterForm } from "@/components/product-filter-form";
 import { ProductGrid } from "@/components/product-grid";
+import type { Product } from "@/data/types";
 import { getAllCategories, getCategoryBySlug } from "@/lib/categories";
 import {
   filterAndSortProducts,
@@ -7,7 +8,7 @@ import {
   parseSearchParam,
   type SortOption,
 } from "@/lib/product-filters";
-import { searchProducts } from "@/lib/products";
+import { getProductsByCategory, searchProducts } from "@/lib/products";
 
 export default async function SearchPage(props: PageProps<"/search">) {
   const searchParams = await props.searchParams;
@@ -17,11 +18,24 @@ export default async function SearchPage(props: PageProps<"/search">) {
   const maxPrice = parsePriceParam(searchParams.maxPrice);
   const sort = parseSearchParam(searchParams.sort) as SortOption | undefined;
 
-  const [category, matches, categories] = await Promise.all([
+  const [category, categories] = await Promise.all([
     categorySlug ? getCategoryBySlug(categorySlug) : Promise.resolve(undefined),
-    query ? searchProducts(query) : Promise.resolve([]),
     getAllCategories(),
   ]);
+
+  // An empty query with a category picked in the search bar's dropdown
+  // should browse that category, not show nothing — only fall back to the
+  // "enter a search term" prompt when there's neither a query nor a category.
+  let matches: Product[];
+  if (query) {
+    matches = await searchProducts(query);
+  } else if (category) {
+    matches = await getProductsByCategory(category.id);
+  } else {
+    matches = [];
+  }
+
+  const hasResults = Boolean(query || category);
   const products = filterAndSortProducts(matches, {
     category: category?.id,
     minPrice,
@@ -44,14 +58,14 @@ export default async function SearchPage(props: PageProps<"/search">) {
       </aside>
       <div>
         <h1 className="mb-4 text-xl font-semibold">
-          {query ? `Results for "${query}"` : "Search"}
-          {query && (
+          {query ? `Results for "${query}"` : (category?.name ?? "Search")}
+          {hasResults && (
             <span className="ml-2 text-sm font-normal text-gray-500">
               {products.length} results
             </span>
           )}
         </h1>
-        {query ? (
+        {hasResults ? (
           <ProductGrid products={products} />
         ) : (
           <p className="text-sm text-gray-600">

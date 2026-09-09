@@ -1,13 +1,16 @@
 import Link from "next/link";
-import { Show, UserButton } from "@clerk/nextjs";
+import { Show } from "@clerk/nextjs";
+import { currentUser } from "@clerk/nextjs/server";
 import { Menu, Search, ShoppingCart, User } from "lucide-react";
 import { CartBadge } from "@/components/cart-badge";
 import { Logo } from "@/components/logo";
+import { SearchInput } from "@/components/search-input";
 import { StickyHeaderShell } from "@/components/sticky-header-shell";
 import { getAllCategories } from "@/lib/categories";
 
 export async function Header() {
-  const categories = await getAllCategories();
+  const [categories, user] = await Promise.all([getAllCategories(), currentUser()]);
+  const firstName = user?.firstName;
 
   return (
     <StickyHeaderShell>
@@ -16,7 +19,7 @@ export async function Header() {
 
         <form
           action="/search"
-          className="hidden flex-1 overflow-hidden rounded-md ring-accent-buy transition-shadow focus-within:ring-2 sm:flex"
+          className="hidden flex-1 rounded-md ring-accent-buy transition-shadow focus-within:ring-2 sm:flex"
         >
           <label htmlFor="category" className="sr-only">
             Search category
@@ -24,7 +27,7 @@ export async function Header() {
           <select
             id="category"
             name="category"
-            className="cursor-pointer border-r border-border bg-gray-100 px-3 text-base text-brand focus:outline-none"
+            className="cursor-pointer rounded-l-md border-r border-border bg-gray-100 px-3 text-base text-brand focus:outline-none"
             defaultValue=""
           >
             <option value="">All</option>
@@ -34,20 +37,14 @@ export async function Header() {
               </option>
             ))}
           </select>
-          <label htmlFor="search-q" className="sr-only">
-            Search products
-          </label>
-          <input
+          <SearchInput
             id="search-q"
-            type="search"
-            name="q"
-            placeholder="Search products"
             className="w-full bg-white px-4 py-3 text-base text-brand focus:outline-none"
           />
           <button
             type="submit"
             aria-label="Search"
-            className="flex cursor-pointer items-center bg-accent-buy px-5 transition-colors hover:bg-accent-buy-hover"
+            className="flex cursor-pointer items-center rounded-r-md bg-accent-buy px-5 transition-colors hover:bg-accent-buy-hover"
           >
             <Search className="h-5 w-5 text-brand" />
           </button>
@@ -66,16 +63,15 @@ export async function Header() {
               </Link>
             }
           >
-            <div className="hidden items-center gap-2 sm:flex">
-              <Link
-                href="/account"
-                className="rounded-sm px-1 py-1 hover:outline hover:outline-white"
-              >
-                <span className="block text-xs text-gray-300">Hello</span>
-                <span className="font-semibold">Account &amp; Lists</span>
-              </Link>
-              <UserButton />
-            </div>
+            <Link
+              href="/account"
+              className="hidden rounded-sm px-1 py-1 hover:outline hover:outline-white sm:block"
+            >
+              <span className="block text-xs text-gray-300">
+                Hello, {firstName ?? "there"}
+              </span>
+              <span className="font-semibold">Account &amp; Lists</span>
+            </Link>
           </Show>
           <Link
             href="/account/orders"
@@ -102,14 +98,8 @@ export async function Header() {
         action="/search"
         className="flex bg-brand px-4 pb-3 ring-accent-buy transition-shadow focus-within:ring-2 sm:hidden"
       >
-        <label htmlFor="search-q-mobile" className="sr-only">
-          Search products
-        </label>
-        <input
+        <SearchInput
           id="search-q-mobile"
-          type="search"
-          name="q"
-          placeholder="Search products"
           className="w-full rounded-l-md bg-white px-4 py-3 text-base text-brand focus:outline-none"
         />
         <button

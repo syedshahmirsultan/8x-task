@@ -21,7 +21,6 @@ export function ProductCard({
     <li
       className={`group rounded-lg border border-border bg-white p-3 transition-shadow duration-200 hover:shadow-lg ${className}`}
       aria-hidden={ariaHidden || undefined}
-      inert={ariaHidden || undefined}
     >
       <Link
         href={`/products/${product.slug}`}
