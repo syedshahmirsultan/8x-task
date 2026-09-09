@@ -133,12 +133,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     writeCart(readCart().filter((item) => item.id !== lineId));
   }, []);
 
+  // Clamped to a minimum of 1 rather than removing the line at 0 — removal
+  // is a separate, explicit action (see removeItem) so a quantity control
+  // never silently deletes what the user is looking at.
   const updateQuantity = useCallback((lineId: string, quantity: number) => {
     const current = readCart();
-    const next =
-      quantity <= 0
-        ? current.filter((item) => item.id !== lineId)
-        : current.map((item) => (item.id === lineId ? { ...item, quantity } : item));
+    const next = current.map((item) =>
+      item.id === lineId ? { ...item, quantity: Math.max(1, quantity) } : item,
+    );
     writeCart(next);
   }, []);
 

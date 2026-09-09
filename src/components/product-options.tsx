@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Minus, Plus } from "lucide-react";
+import { toast } from "sonner";
 import type { Product } from "@/data/types";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/format";
@@ -13,7 +14,6 @@ export function ProductOptions({ product }: { product: Product }) {
   const hasVariants = (product.variants?.length ?? 0) > 0;
   const [selectedVariantId, setSelectedVariantId] = useState(product.variants?.[0]?.id);
   const [rawQuantity, setRawQuantity] = useState(1);
-  const [justAdded, setJustAdded] = useState(false);
 
   const selectedVariant = useMemo(
     () => product.variants?.find((v) => v.id === selectedVariantId),
@@ -37,8 +37,9 @@ export function ProductOptions({ product }: { product: Product }) {
 
   function handleAddToCart() {
     addItem(product, selectedVariant, quantity);
-    setJustAdded(true);
-    setTimeout(() => setJustAdded(false), 2000);
+    toast.success(`Added "${product.title}" to cart`, {
+      description: selectedVariant?.label,
+    });
   }
 
   function handleBuyNow() {
@@ -120,7 +121,7 @@ export function ProductOptions({ product }: { product: Product }) {
           disabled={!inStock}
           className="w-full cursor-pointer rounded-full bg-accent-cart py-2.5 text-sm font-semibold text-brand transition-colors hover:bg-accent-cart-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {justAdded ? "Added to Cart ✓" : "Add to Cart"}
+          Add to Cart
         </button>
         <button
           type="button"

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { CartProvider } from "@/lib/cart-context";
@@ -41,6 +42,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
             <Footer />
           </CartProvider>
+          <Toaster
+            position="top-right"
+            closeButton
+            toastOptions={{
+              classNames: {
+                toast: "!bg-white !border-border !text-foreground !shadow-lg",
+                title: "!text-sm !font-medium",
+                closeButton: "!bg-white !border-border !text-foreground",
+              },
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>
