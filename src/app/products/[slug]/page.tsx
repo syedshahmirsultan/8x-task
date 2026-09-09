@@ -8,16 +8,17 @@ import { getAllProducts, getProductBySlug, getRelatedProducts } from "@/lib/prod
 
 // Product slugs are known upfront from the mock data, so every PDP is
 // generated statically at build time instead of rendered per request.
-export function generateStaticParams() {
-  return getAllProducts().map((product) => ({ slug: product.slug }));
+export async function generateStaticParams() {
+  const allProducts = await getAllProducts();
+  return allProducts.map((product) => ({ slug: product.slug }));
 }
 
 export default async function ProductPage(props: PageProps<"/products/[slug]">) {
   const { slug } = await props.params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const related = getRelatedProducts(product);
+  const related = await getRelatedProducts(product);
 
   return (
     <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
@@ -52,10 +53,10 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
 
 export async function generateMetadata(props: PageProps<"/products/[slug]">) {
   const { slug } = await props.params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
   if (!product) return {};
 
-  const category = getCategoryById(product.categoryId);
+  const category = await getCategoryById(product.categoryId);
   return {
     title: `${product.title} | ${category?.name ?? "Kartify"}`,
     description: product.description,

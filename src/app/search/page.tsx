@@ -13,12 +13,15 @@ export default async function SearchPage(props: PageProps<"/search">) {
   const searchParams = await props.searchParams;
   const query = parseSearchParam(searchParams.q) ?? "";
   const categorySlug = parseSearchParam(searchParams.category);
-  const category = categorySlug ? getCategoryBySlug(categorySlug) : undefined;
   const minPrice = parsePriceParam(searchParams.minPrice);
   const maxPrice = parsePriceParam(searchParams.maxPrice);
   const sort = parseSearchParam(searchParams.sort) as SortOption | undefined;
 
-  const matches = query ? searchProducts(query) : [];
+  const [category, matches, categories] = await Promise.all([
+    categorySlug ? getCategoryBySlug(categorySlug) : Promise.resolve(undefined),
+    query ? searchProducts(query) : Promise.resolve([]),
+    getAllCategories(),
+  ]);
   const products = filterAndSortProducts(matches, {
     category: category?.id,
     minPrice,
@@ -31,7 +34,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
       <aside>
         <ProductFilterForm
           action="/search"
-          categories={getAllCategories()}
+          categories={categories}
           activeCategory={categorySlug}
           minPrice={minPrice}
           maxPrice={maxPrice}

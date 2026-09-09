@@ -4,12 +4,15 @@ import { ProductRail } from "@/components/product-rail";
 import { getAllCategories } from "@/lib/categories";
 import { getAllProducts, getFeaturedProducts } from "@/lib/products";
 
-export default function Home() {
-  const categories = getAllCategories();
-  const deals = getAllProducts().filter(
+export default async function Home() {
+  const [categories, allProducts, featured] = await Promise.all([
+    getAllCategories(),
+    getAllProducts(),
+    getFeaturedProducts(8),
+  ]);
+  const deals = allProducts.filter(
     (p) => p.compareAtPrice !== undefined && p.compareAtPrice > p.price,
   );
-  const featured = getFeaturedProducts(8);
 
   return (
     <main id="main-content" className="flex-1">

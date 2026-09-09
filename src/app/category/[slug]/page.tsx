@@ -12,7 +12,7 @@ import { getAllProducts } from "@/lib/products";
 
 export default async function CategoryPage(props: PageProps<"/category/[slug]">) {
   const { slug } = await props.params;
-  const category = getCategoryBySlug(slug);
+  const category = await getCategoryBySlug(slug);
   if (!category) notFound();
 
   const searchParams = await props.searchParams;
@@ -20,7 +20,9 @@ export default async function CategoryPage(props: PageProps<"/category/[slug]">)
   const maxPrice = parsePriceParam(searchParams.maxPrice);
   const sort = parseSearchParam(searchParams.sort) as SortOption | undefined;
 
-  const products = filterAndSortProducts(getAllProducts(), {
+  const [allProducts, categories] = await Promise.all([getAllProducts(), getAllCategories()]);
+
+  const products = filterAndSortProducts(allProducts, {
     category: category.id,
     minPrice,
     maxPrice,
@@ -32,7 +34,7 @@ export default async function CategoryPage(props: PageProps<"/category/[slug]">)
       <aside>
         <ProductFilterForm
           action={`/category/${category.slug}`}
-          categories={getAllCategories()}
+          categories={categories}
           showCategoryFilter={false}
           minPrice={minPrice}
           maxPrice={maxPrice}
