@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { Show, UserButton } from "@clerk/nextjs";
 import { Menu, Search, ShoppingCart, User } from "lucide-react";
 import { CartBadge } from "@/components/cart-badge";
 import { Logo } from "@/components/logo";
 import { StickyHeaderShell } from "@/components/sticky-header-shell";
 import { getAllCategories } from "@/lib/categories";
 
-export function Header() {
-  const categories = getAllCategories();
+export async function Header() {
+  const categories = await getAllCategories();
 
   return (
     <StickyHeaderShell>
@@ -53,13 +54,29 @@ export function Header() {
         </form>
 
         <nav className="flex shrink-0 items-center gap-4 text-sm text-white">
-          <Link
-            href="/account"
-            className="hidden rounded-sm px-1 py-1 hover:outline hover:outline-white sm:block"
+          <Show
+            when="signed-in"
+            fallback={
+              <Link
+                href="/sign-in"
+                className="hidden rounded-sm px-1 py-1 hover:outline hover:outline-white sm:block"
+              >
+                <span className="block text-xs text-gray-300">Hello, sign in</span>
+                <span className="font-semibold">Account &amp; Lists</span>
+              </Link>
+            }
           >
-            <span className="block text-xs text-gray-300">Hello, sign in</span>
-            <span className="font-semibold">Account &amp; Lists</span>
-          </Link>
+            <div className="hidden items-center gap-2 sm:flex">
+              <Link
+                href="/account"
+                className="rounded-sm px-1 py-1 hover:outline hover:outline-white"
+              >
+                <span className="block text-xs text-gray-300">Hello</span>
+                <span className="font-semibold">Account &amp; Lists</span>
+              </Link>
+              <UserButton />
+            </div>
+          </Show>
           <Link
             href="/account/orders"
             className="hidden rounded-sm px-1 py-1 hover:outline hover:outline-white md:block"
@@ -120,12 +137,24 @@ export function Header() {
             {category.name}
           </Link>
         ))}
-        <Link
-          href="/account"
-          className="ml-auto flex shrink-0 items-center gap-1 hover:underline sm:hidden"
+        <Show
+          when="signed-in"
+          fallback={
+            <Link
+              href="/sign-in"
+              className="ml-auto flex shrink-0 items-center gap-1 hover:underline sm:hidden"
+            >
+              <User className="h-4 w-4" /> Sign in
+            </Link>
+          }
         >
-          <User className="h-4 w-4" /> Sign in
-        </Link>
+          <Link
+            href="/account"
+            className="ml-auto flex shrink-0 items-center gap-1 hover:underline sm:hidden"
+          >
+            <User className="h-4 w-4" /> Account
+          </Link>
+        </Show>
       </div>
     </StickyHeaderShell>
   );

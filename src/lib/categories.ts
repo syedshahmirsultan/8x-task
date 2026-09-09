@@ -1,14 +1,18 @@
-import { categories } from "@/data/categories";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { categories } from "@/db/schema";
 import type { Category } from "@/data/types";
 
-export function getAllCategories(): Category[] {
-  return categories;
+export async function getAllCategories(): Promise<Category[]> {
+  return db.select().from(categories);
 }
 
-export function getCategoryBySlug(slug: string): Category | undefined {
-  return categories.find((c) => c.slug === slug);
+export async function getCategoryBySlug(slug: string): Promise<Category | undefined> {
+  const [row] = await db.select().from(categories).where(eq(categories.slug, slug));
+  return row;
 }
 
-export function getCategoryById(id: string): Category | undefined {
-  return categories.find((c) => c.id === id);
+export async function getCategoryById(id: string): Promise<Category | undefined> {
+  const [row] = await db.select().from(categories).where(eq(categories.id, id));
+  return row;
 }

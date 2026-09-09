@@ -1,40 +1,92 @@
-import { products } from "@/data/products";
+import { and, eq, ilike, ne, or } from "drizzle-orm";
+import { db } from "@/db";
+import { productVariants, products } from "@/db/schema";
 import type { Product } from "@/data/types";
 
-// Thin query functions over the mock fixtures, mirroring the shape real
-// DB queries will take later (Drizzle) — components should import from
-// here, never reach into src/data directly.
+// Thin query functions over the database — components import from here,
+// never touch @/db directly, so this file is the only thing that changes
+// if the data source ever changes again.
 
-export function getAllProducts(): Product[] {
-  return products;
+type ProductRow = typeof products.$inferSelect & {
+  variants: (typeof productVariants.$inferSelect)[];
+};
+
+function toProduct(row: ProductRow): Product {
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    brand: row.brand,
+    categoryId: row.categoryId,
+    price: row.price,
+    compareAtPrice: row.compareAtPrice ?? undefined,
+    images: row.images,
+    description: row.description,
+    bullets: row.bullets,
+    rating: row.rating,
+    reviewCount: row.reviewCount,
+    stock: row.stock,
+    variants:
+      row.variants.length > 0
+        ? row.variants.map((v) => ({
+            id: v.id,
+            label: v.label,
+            options: v.options,
+            price: v.price,
+            stock: v.stock,
+            image: v.image ?? undefined,
+          }))
+        : undefined,
+  };
 }
 
-export function getProductBySlug(slug: string): Product | undefined {
-  return products.find((p) => p.slug === slug);
+export async function getAllProducts(): Promise<Product[]> {
+  const rows = await db.query.products.findMany({ with: { variants: true } });
+  return rows.map(toProduct);
 }
 
-export function getProductsByCategory(categoryId: string): Product[] {
-  return products.filter((p) => p.categoryId === categoryId);
+export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  const row = await db.query.products.findFirst({
+    where: eq(products.slug, slug),
+    with: { variants: true },
+  });
+  return row ? toProduct(row) : undefined;
 }
 
-export function getFeaturedProducts(limit = 8): Product[] {
-  return products.slice(0, limit);
+export async function getProductsByCategory(categoryId: string): Promise<Product[]> {
+  const rows = await db.query.products.findMany({
+    where: eq(products.categoryId, categoryId),
+    with: { variants: true },
+  });
+  return rows.map(toProduct);
+}
+
+export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
+  const rows = await db.query.products.findMany({ with: { variants: true }, limit });
+  return rows.map(toProduct);
 }
 
 /** Basic same-category recommendation, excluding the product itself. */
-export function getRelatedProducts(product: Product, limit = 4): Product[] {
-  return products
-    .filter((p) => p.categoryId === product.categoryId && p.id !== product.id)
-    .slice(0, limit);
+export async function getRelatedProducts(product: Product, limit = 4): Promise<Product[]> {
+  const rows = await db.query.products.findMany({
+    where: and(eq(products.categoryId, product.categoryId), ne(products.id, product.id)),
+    with: { variants: true },
+    limit,
+  });
+  return rows.map(toProduct);
 }
 
-export function searchProducts(query: string): Product[] {
-  const q = query.trim().toLowerCase();
+export async function searchProducts(query: string): Promise<Product[]> {
+  const q = query.trim();
   if (!q) return [];
-  return products.filter(
-    (p) =>
-      p.title.toLowerCase().includes(q) ||
-      p.brand.toLowerCase().includes(q) ||
-      p.description.toLowerCase().includes(q),
-  );
+  const pattern = `%${q}%`;
+  const rows = await db.query.products.findMany({
+    where: or(
+      ilike(products.title, pattern),
+      ilike(products.brand, pattern),
+      ilike(products.description, pattern),
+    ),
+    with: { variants: true },
+  });
+  return rows.map(toProduct);
 }
