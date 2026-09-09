@@ -3,11 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/format";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, subtotal, totalCount } = useCart();
+
+  function handleRemove(lineId: string, title: string) {
+    removeItem(lineId);
+    toast(`Removed "${title}" from cart`);
+  }
 
   if (items.length === 0) {
     return (
@@ -56,14 +62,28 @@ export default function CartPage() {
 
                 <div className="flex items-center gap-3">
                   <div className="flex items-center rounded-md border border-border">
-                    <button
-                      type="button"
-                      aria-label="Decrease quantity"
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="cursor-pointer p-1.5 hover:bg-background"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
+                    {item.quantity === 1 ? (
+                      // At quantity 1, a "decrease" click would silently
+                      // delete the line — make that explicit instead by
+                      // turning this into a clearly-labeled delete action.
+                      <button
+                        type="button"
+                        aria-label={`Remove ${item.title} from cart`}
+                        onClick={() => handleRemove(item.id, item.title)}
+                        className="cursor-pointer p-1.5 text-price hover:bg-background"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label="Decrease quantity"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="cursor-pointer p-1.5 hover:bg-background"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                    )}
                     <span className="w-8 text-center text-sm">{item.quantity}</span>
                     <button
                       type="button"
@@ -76,7 +96,7 @@ export default function CartPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeItem(item.id)}
+                    onClick={() => handleRemove(item.id, item.title)}
                     className="flex cursor-pointer items-center gap-1 text-sm text-link hover:text-link-hover hover:underline"
                   >
                     <Trash2 className="h-4 w-4" /> Remove
