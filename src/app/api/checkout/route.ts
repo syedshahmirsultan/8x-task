@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   const lineItems: Array<{
     price_data: {
       currency: string;
-      product_data: { name: string; images: string[]; metadata: { productId: string } };
+      product_data: { name: string; images: string[]; metadata: { productId: string; variantId: string } };
       unit_amount: number;
     };
     quantity: number;
@@ -58,10 +58,15 @@ export async function POST(request: Request) {
     lineItems.push({
       price_data: {
         currency: "usd",
-        // metadata carries our internal product id through Stripe so the
-        // webhook can link each line item back to a real product — needed
-        // to verify "did this user actually buy this?" for reviews.
-        product_data: { name: title, images: image ? [image] : [], metadata: { productId: product.id } },
+        // metadata carries our internal product/variant ids through Stripe
+        // so the webhook can link each line item back to a real product
+        // (needed to verify "did this user actually buy this?" for reviews)
+        // and decrement the right stock row once the order is fulfilled.
+        product_data: {
+          name: title,
+          images: image ? [image] : [],
+          metadata: { productId: product.id, variantId: item.variantId ?? "" },
+        },
         unit_amount: price,
       },
       quantity: Math.max(1, Math.floor(item.quantity)),
