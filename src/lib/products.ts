@@ -1,4 +1,4 @@
-import { and, eq, ilike, inArray, ne, or } from "drizzle-orm";
+import { and, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { productVariants, products } from "@/db/schema";
 import type { Product } from "@/data/types";
@@ -103,6 +103,30 @@ export async function updateVariantListing(
   values: { price?: number; stock?: number },
 ): Promise<void> {
   await db.update(productVariants).set(values).where(eq(productVariants.id, id));
+}
+
+/**
+ * Called once per fulfilled order (see the Stripe webhook) to reflect a
+ * purchase in the catalog. Clamped at 0 with GREATEST rather than trusting
+ * the in-memory stock number, since concurrent orders could otherwise race
+ * each other into a negative count.
+ */
+export async function decrementStock(
+  items: { productId: string | null; variantId: string | null; quantity: number }[],
+): Promise<void> {
+  for (const item of items) {
+    if (item.variantId) {
+      await db
+        .update(productVariants)
+        .set({ stock: sql`greatest(${productVariants.stock} - ${item.quantity}, 0)` })
+        .where(eq(productVariants.id, item.variantId));
+    } else if (item.productId) {
+      await db
+        .update(products)
+        .set({ stock: sql`greatest(${products.stock} - ${item.quantity}, 0)` })
+        .where(eq(products.id, item.productId));
+    }
+  }
 }
 
 export async function getCachedAiSummary(
