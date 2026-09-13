@@ -49,6 +49,9 @@ export interface OrderItem {
   /** Snapshot of the price in cents at purchase time. */
   price: Money;
   image: string;
+  /** Missing for orders placed before product linking existed. */
+  slug?: string;
+  productId?: string;
 }
 
 export interface Order {

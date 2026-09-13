@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { CheckCircle2, XCircle } from "lucide-react";
+import type Stripe from "stripe";
 import { ClearCartOnLoad } from "./clear-cart-on-load";
+import { ReviewPromptModal } from "./review-prompt-modal";
 import { formatPrice } from "@/lib/format";
 import { parseSearchParam } from "@/lib/product-filters";
+import { getProductSlugsByIds } from "@/lib/products";
 import { stripe } from "@/lib/stripe";
 
 export default async function CheckoutConfirmationPage(
@@ -29,12 +32,44 @@ export default async function CheckoutConfirmationPage(
   // record is created separately by the webhook (see
   // /api/webhooks/stripe), which is the only place we're certain payment
   // truly succeeded rather than just that the browser was redirected here.
-  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    expand: ["line_items.data.price.product"],
+  });
   const paid = session.payment_status === "paid";
+
+  // Read straight from this Stripe session rather than waiting on the
+  // webhook-created order — the review prompt needs to show immediately on
+  // this page, not "in a few seconds" once our DB catches up.
+  const purchasedItems: { title: string; slug: string; image: string }[] = [];
+  if (paid) {
+    const lineItems = session.line_items?.data ?? [];
+    const withProductIds = lineItems
+      .map((item) => {
+        const product = item.price?.product;
+        const isExpanded = product && typeof product === "object" && "metadata" in product;
+        return isExpanded
+          ? {
+              productId: (product as Stripe.Product).metadata?.productId,
+              title: item.description ?? "Item",
+              image: (product as Stripe.Product).images?.[0] ?? "",
+            }
+          : null;
+      })
+      .filter((item): item is { productId: string; title: string; image: string } =>
+        Boolean(item?.productId),
+      );
+
+    const slugsById = await getProductSlugsByIds(withProductIds.map((item) => item.productId));
+    for (const item of withProductIds) {
+      const slug = slugsById.get(item.productId);
+      if (slug) purchasedItems.push({ title: item.title, slug, image: item.image });
+    }
+  }
 
   return (
     <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 text-center">
       {paid && <ClearCartOnLoad />}
+      {paid && <ReviewPromptModal items={purchasedItems} />}
 
       {paid ? (
         <>
