@@ -1,7 +1,7 @@
 import type { Product } from "@/data/types";
 import { ProductCard } from "@/components/product-card";
 
-const CARD_CLASS = "mr-4 w-44 shrink-0 sm:w-52";
+const CARD_CLASS = "mr-4 w-44 shrink-0 sm:w-56";
 
 export function ProductRail({
   title,
@@ -13,13 +13,15 @@ export function ProductRail({
   if (products.length === 0) return null;
 
   return (
-    <section className="mt-8">
+    <section className="mt-10">
       <h2 className="mb-3 text-lg font-semibold">{title}</h2>
-      {/* Auto-scrolling marquee: the track is the product list rendered twice
+      {/* Auto-scrolling rail: the track is the product list rendered twice
           back-to-back, animated by exactly one set's width (-50%) so the loop
           is seamless. Spacing is per-item margin rather than a container gap
           so "one set's width" divides evenly — a gap would be off by half a
-          gap-width at the seam. Paused on hover/focus so it's still browsable. */}
+          gap-width at the seam. The wrapper clips with overflow-hidden, so
+          there's never a scrollbar to see. Paused on hover/focus so it's
+          still browsable. */}
       <div className="overflow-hidden">
         <ul className="animate-marquee flex w-max">
           {products.map((product) => (
