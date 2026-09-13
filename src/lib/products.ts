@@ -93,6 +93,18 @@ export async function updateProductListing(
   await db.update(products).set(values).where(eq(products.id, id));
 }
 
+/**
+ * Products with variants show variant-level price/stock on the PDP (see
+ * product-options.tsx), not the parent product's own price/stock columns —
+ * so editing those requires updating the variant row, not the product row.
+ */
+export async function updateVariantListing(
+  id: string,
+  values: { price?: number; stock?: number },
+): Promise<void> {
+  await db.update(productVariants).set(values).where(eq(productVariants.id, id));
+}
+
 export async function getCachedAiSummary(
   id: string,
 ): Promise<{ aiSummary: string | null; aiSummaryReviewCount: number } | undefined> {
