@@ -26,6 +26,7 @@ export default async function AdminProductsPage() {
                 title={product.title}
                 priceCents={product.price}
                 stock={product.stock}
+                variants={product.variants ?? []}
               />
             ))}
           </tbody>
