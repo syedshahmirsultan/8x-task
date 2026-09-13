@@ -15,6 +15,20 @@
       "when": 1788914340110,
       "tag": "0001_amused_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789254968206,
+      "tag": "0002_bouncy_wendigo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789258017591,
+      "tag": "0003_outstanding_storm",
+      "breakpoints": true
     }
   ]
 }

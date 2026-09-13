@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CheckCircle2 } from "lucide-react";
 import type { Order, OrderStatus } from "@/data/types";
 import { formatPrice } from "@/lib/format";
 
@@ -9,7 +10,13 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
   Processing: "text-accent-buy",
 };
 
-export function OrdersView({ orders }: { orders: Order[] }) {
+export function OrdersView({
+  orders,
+  reviewedProductIds,
+}: {
+  orders: Order[];
+  reviewedProductIds: Set<string>;
+}) {
   if (orders.length === 0) {
     return (
       <main id="main-content" className="mx-auto w-full max-w-3xl flex-1 px-4 py-16 text-center">
@@ -64,7 +71,21 @@ export function OrdersView({ orders }: { orders: Order[] }) {
                     <p className="text-sm">{item.title}</p>
                     <p className="text-xs text-gray-500">Qty {item.quantity}</p>
                   </div>
-                  <span className={`text-sm font-semibold ${STATUS_STYLES[order.status]}`}>
+                  {item.slug &&
+                    (item.productId && reviewedProductIds.has(item.productId) ? (
+                      <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-success">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Reviewed
+                      </span>
+                    ) : (
+                      <Link
+                        href={`/products/${item.slug}#reviews`}
+                        className="shrink-0 cursor-pointer text-sm font-semibold text-accent-buy transition-colors hover:underline"
+                      >
+                        Add review
+                      </Link>
+                    ))}
+                  <span className={`shrink-0 text-sm font-semibold ${STATUS_STYLES[order.status]}`}>
                     {order.status}
                   </span>
                 </li>

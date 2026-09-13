@@ -1,10 +1,15 @@
+import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
+import { ProductAiSummary } from "@/components/product-ai-summary";
 import { ProductGallery } from "@/components/product-gallery";
 import { ProductOptions } from "@/components/product-options";
 import { ProductRail } from "@/components/product-rail";
+import { ProductReviews } from "@/components/product-reviews";
 import { StarRating } from "@/components/star-rating";
 import { getCategoryById } from "@/lib/categories";
+import { hasUserPurchasedProduct } from "@/lib/orders";
 import { getAllProducts, getProductBySlug, getRelatedProducts } from "@/lib/products";
+import { getReviewsByProductId, hasUserReviewedProduct, summarizeReviews } from "@/lib/reviews";
 
 // Product slugs are known upfront from the mock data, so every PDP is
 // generated statically at build time instead of rendered per request.
@@ -18,18 +23,40 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const related = await getRelatedProducts(product);
+  const { userId } = await auth();
+  const [related, reviews] = await Promise.all([
+    getRelatedProducts(product),
+    getReviewsByProductId(product.id),
+  ]);
+  const { average, count } = summarizeReviews(reviews);
+
+  let canReview = false;
+  let alreadyReviewed = false;
+  if (userId) {
+    const [purchased, reviewed] = await Promise.all([
+      hasUserPurchasedProduct(userId, product.id),
+      hasUserReviewedProduct(product.id, userId),
+    ]);
+    alreadyReviewed = reviewed;
+    canReview = purchased && !reviewed;
+  }
 
   return (
     <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,3fr)_minmax(0,2fr)]">
+      <ProductAiSummary slug={product.slug} />
+
+      <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,3fr)_minmax(0,2fr)]">
         <ProductGallery images={product.images} title={product.title} />
 
         <div>
           <p className="text-sm text-link hover:underline">{product.brand}</p>
           <h1 className="mt-1 text-xl font-semibold">{product.title}</h1>
           <div className="mt-2">
-            <StarRating rating={product.rating} reviewCount={product.reviewCount} />
+            {count > 0 ? (
+              <StarRating rating={average} reviewCount={count} />
+            ) : (
+              <p className="text-sm text-gray-500">No ratings yet</p>
+            )}
           </div>
 
           <ul className="mt-4 list-inside list-disc space-y-1.5 text-sm text-foreground">
@@ -45,6 +72,17 @@ export default async function ProductPage(props: PageProps<"/products/[slug]">) 
           <ProductOptions product={product} />
         </div>
       </div>
+
+      <ProductReviews
+        slug={product.slug}
+        productId={product.id}
+        productTitle={product.title}
+        productImage={product.images[0]}
+        productPrice={product.price}
+        initialReviews={reviews}
+        initialCanReview={canReview}
+        initialAlreadyReviewed={alreadyReviewed}
+      />
 
       <ProductRail title="Related products" products={related} />
     </main>

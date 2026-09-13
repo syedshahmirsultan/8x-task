@@ -26,6 +26,26 @@ export const products = pgTable("products", {
   rating: real().notNull(),
   reviewCount: integer().notNull(),
   stock: integer().notNull(),
+  /** AI-generated blurb combining description + real customer reviews. */
+  aiSummary: text(),
+  aiSummaryGeneratedAt: timestamp(),
+  /** Real review count the summary was generated from — regenerate once it's stale. */
+  aiSummaryReviewCount: integer().notNull().default(0),
+});
+
+export const reviews = pgTable("reviews", {
+  id: text().primaryKey(),
+  productId: text()
+    .notNull()
+    .references(() => products.id),
+  userId: text().notNull(),
+  /** Snapshot of the reviewer's display name at submission time. */
+  authorName: text().notNull(),
+  /** 1-5. */
+  rating: integer().notNull(),
+  title: text().notNull(),
+  body: text().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
 });
 
 export const productVariants = pgTable("product_variants", {
@@ -58,6 +78,8 @@ export const orderItems = pgTable("order_items", {
   orderId: text()
     .notNull()
     .references(() => orders.id),
+  /** Nullable — orders placed before this column existed won't have it. */
+  productId: text().references(() => products.id),
   title: text().notNull(),
   quantity: integer().notNull(),
   /** Cents; snapshot at purchase time. */
@@ -74,6 +96,10 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     fields: [orderItems.orderId],
     references: [orders.id],
   }),
+  product: one(products, {
+    fields: [orderItems.productId],
+    references: [products.id],
+  }),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
@@ -86,6 +112,14 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     references: [categories.id],
   }),
   variants: many(productVariants),
+  reviews: many(reviews),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  product: one(products, {
+    fields: [reviews.productId],
+    references: [products.id],
+  }),
 }));
 
 export const productVariantsRelations = relations(productVariants, ({ one }) => ({

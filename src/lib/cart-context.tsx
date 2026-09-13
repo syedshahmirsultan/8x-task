@@ -28,6 +28,7 @@ export interface CartLineItem {
 interface CartContextValue {
   items: CartLineItem[];
   addItem: (product: Product, variant: ProductVariant | undefined, quantity?: number) => void;
+  addLineItem: (line: Omit<CartLineItem, "quantity">, quantity?: number) => void;
   removeItem: (lineId: string) => void;
   updateQuantity: (lineId: string, quantity: number) => void;
   clearCart: () => void;
@@ -101,32 +102,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     writeCart(readCart());
   }, []);
 
+  // Lower-level primitive for callers that already have a resolved line
+  // (e.g. the chat assistant, which fetches product data server-side) rather
+  // than a full Product object.
+  const addLineItem = useCallback((line: Omit<CartLineItem, "quantity">, quantity = 1) => {
+    const current = readCart();
+    const existing = current.find((item) => item.id === line.id);
+    const next = existing
+      ? current.map((item) =>
+          item.id === line.id ? { ...item, quantity: item.quantity + quantity } : item,
+        )
+      : [...current, { ...line, quantity }];
+    writeCart(next);
+  }, []);
+
+  // The common path — lets the store resolve variant fields itself from a
+  // full Product/ProductVariant pair.
   const addItem = useCallback(
     (product: Product, variant: ProductVariant | undefined, quantity = 1) => {
       const lineId = variant ? `${product.id}:${variant.id}` : product.id;
-      const current = readCart();
-      const existing = current.find((item) => item.id === lineId);
-      const next = existing
-        ? current.map((item) =>
-            item.id === lineId ? { ...item, quantity: item.quantity + quantity } : item,
-          )
-        : [
-            ...current,
-            {
-              id: lineId,
-              productId: product.id,
-              variantId: variant?.id,
-              slug: product.slug,
-              title: product.title,
-              variantLabel: variant?.label,
-              image: variant?.image ?? product.images[0],
-              price: variant?.price ?? product.price,
-              quantity,
-            },
-          ];
-      writeCart(next);
+      addLineItem(
+        {
+          id: lineId,
+          productId: product.id,
+          variantId: variant?.id,
+          slug: product.slug,
+          title: product.title,
+          variantLabel: variant?.label,
+          image: variant?.image ?? product.images[0],
+          price: variant?.price ?? product.price,
+        },
+        quantity,
+      );
     },
-    [],
+    [addLineItem],
   );
 
   const removeItem = useCallback((lineId: string) => {
@@ -159,8 +168,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ items, addItem, removeItem, updateQuantity, clearCart, subtotal, totalCount }),
-    [items, addItem, removeItem, updateQuantity, clearCart, subtotal, totalCount],
+    () => ({ items, addItem, addLineItem, removeItem, updateQuantity, clearCart, subtotal, totalCount }),
+    [items, addItem, addLineItem, removeItem, updateQuantity, clearCart, subtotal, totalCount],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -52,7 +52,7 @@ export function ProductOptions({ product }: { product: Product }) {
       <p className="text-2xl font-semibold text-price">{formatPrice(price)}</p>
 
       <p className={`text-sm font-medium ${inStock ? "text-success" : "text-price"}`}>
-        {inStock ? "In Stock" : "Out of Stock"}
+        {inStock ? `In Stock — ${stock} left` : "Out of Stock"}
       </p>
 
       {hasVariants && (
