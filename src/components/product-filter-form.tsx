@@ -1,5 +1,13 @@
+import { CustomSelect } from "@/components/custom-select";
 import type { Category } from "@/data/types";
 import type { SortOption } from "@/lib/product-filters";
+
+const SORT_OPTIONS = [
+  { value: "featured", label: "Featured" },
+  { value: "price-asc", label: "Price: Low to High" },
+  { value: "price-desc", label: "Price: High to Low" },
+  { value: "rating", label: "Avg. Customer Rating" },
+];
 
 export function ProductFilterForm({
   action,
@@ -86,17 +94,7 @@ export function ProductFilterForm({
         <label htmlFor="sort" className="mb-2 block text-sm font-semibold">
           Sort by
         </label>
-        <select
-          id="sort"
-          name="sort"
-          defaultValue={sort ?? "featured"}
-          className="w-full cursor-pointer rounded-md border border-border px-2 py-1.5 text-sm"
-        >
-          <option value="featured">Featured</option>
-          <option value="price-asc">Price: Low to High</option>
-          <option value="price-desc">Price: High to Low</option>
-          <option value="rating">Avg. Customer Rating</option>
-        </select>
+        <CustomSelect id="sort" name="sort" options={SORT_OPTIONS} defaultValue={sort ?? "featured"} />
       </div>
 
       <button

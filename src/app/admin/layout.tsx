@@ -1,19 +1,13 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import { AdminLoginForm } from "@/components/admin/admin-login-form";
 import { AdminLogoutButton } from "@/components/admin/admin-logout-button";
-import { getAdminUser, hasAdminSession } from "@/lib/admin";
+import { hasAdminSession } from "@/lib/admin";
 
-// Two gates, not one: Clerk sign-in + email allowlist (a 404, not a sign-in
-// redirect, so the section's existence isn't revealed to non-admins) — then
-// a separate shared password re-entered explicitly before the dashboard
-// itself renders, so being signed in as an allowlisted admin alone isn't
-// enough to land straight on it.
+// Single gate: a shared email + password checked against ADMIN_EMAILS /
+// ADMIN_PASSWORD, independent of any Clerk sign-in — so the dashboard is
+// reachable from any device or account that knows the credentials.
 export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
-  const admin = await getAdminUser();
-  if (!admin) notFound();
-
-  const verified = await hasAdminSession(admin.id);
+  const verified = await hasAdminSession();
   if (!verified) return <AdminLoginForm />;
 
   return (

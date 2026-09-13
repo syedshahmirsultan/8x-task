@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getAdminUser } from "@/lib/admin";
+import { hasAdminSession } from "@/lib/admin";
 import { updateProductListing } from "@/lib/products";
 
 const updateSchema = z.object({
@@ -10,8 +10,8 @@ const updateSchema = z.object({
 });
 
 export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/products/[id]">) {
-  const admin = await getAdminUser();
-  if (!admin) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+  const verified = await hasAdminSession();
+  if (!verified) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 
   const { id } = await ctx.params;
   const parsed = updateSchema.safeParse(await request.json());

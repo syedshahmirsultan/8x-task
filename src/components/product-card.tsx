@@ -19,7 +19,7 @@ export function ProductCard({
 
   return (
     <li
-      className={`group rounded-lg border border-border bg-white p-3 transition-shadow duration-200 hover:shadow-lg ${className}`}
+      className={`group overflow-hidden rounded-xl border border-border bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-link/30 hover:shadow-lg ${className}`}
       aria-hidden={ariaHidden || undefined}
     >
       <Link
@@ -27,7 +27,7 @@ export function ProductCard({
         tabIndex={ariaHidden ? -1 : undefined}
         className="block cursor-pointer"
       >
-        <div className="relative aspect-square overflow-hidden rounded-md bg-background">
+        <div className="relative aspect-square overflow-hidden bg-background">
           <Image
             src={product.images[0]}
             alt={product.title}
@@ -36,19 +36,19 @@ export function ProductCard({
             className="object-cover transition-transform duration-300 ease-out group-hover:scale-110"
           />
         </div>
-        <p className="mt-2 line-clamp-2 text-sm text-foreground transition-colors group-hover:text-link">
-          {product.title}
-        </p>
-        <p className="mt-1 flex items-baseline gap-2">
-          <span className="font-semibold text-price transition-colors group-hover:text-link-hover">
-            {formatPrice(product.price)}
-          </span>
-          {hasDiscount && (
-            <span className="text-xs text-gray-500 line-through">
-              {formatPrice(product.compareAtPrice!)}
-            </span>
-          )}
-        </p>
+        <div className="space-y-1.5 p-3">
+          <p className="line-clamp-2 min-h-10 text-sm text-foreground transition-colors group-hover:text-link">
+            {product.title}
+          </p>
+          <p className="flex items-baseline gap-2">
+            <span className="text-base font-bold text-price">{formatPrice(product.price)}</span>
+            {hasDiscount && (
+              <span className="text-xs text-gray-400 line-through">
+                {formatPrice(product.compareAtPrice!)}
+              </span>
+            )}
+          </p>
+        </div>
       </Link>
     </li>
   );

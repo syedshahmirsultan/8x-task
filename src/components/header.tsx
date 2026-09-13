@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { Show } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
-import { Menu, Search, ShieldCheck, ShoppingCart, User } from "lucide-react";
+import { Menu, Search, ShoppingCart, User } from "lucide-react";
 import { CartBadge } from "@/components/cart-badge";
+import { CategorySelect } from "@/components/category-select";
 import { Logo } from "@/components/logo";
 import { SearchInput } from "@/components/search-input";
 import { StickyHeaderShell } from "@/components/sticky-header-shell";
-import { getAdminUser } from "@/lib/admin";
 import { getAllCategories } from "@/lib/categories";
 
 export async function Header() {
-  const [categories, user, admin] = await Promise.all([getAllCategories(), currentUser(), getAdminUser()]);
+  const [categories, user] = await Promise.all([getAllCategories(), currentUser()]);
   const firstName = user?.firstName;
 
   return (
@@ -22,22 +22,7 @@ export async function Header() {
           action="/search"
           className="hidden flex-1 rounded-md ring-accent-buy transition-shadow focus-within:ring-2 sm:flex"
         >
-          <label htmlFor="category" className="sr-only">
-            Search category
-          </label>
-          <select
-            id="category"
-            name="category"
-            className="cursor-pointer rounded-l-md border-r border-border bg-gray-100 px-3 text-base text-brand focus:outline-none"
-            defaultValue=""
-          >
-            <option value="">All</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.slug}>
-                {category.name}
-              </option>
-            ))}
-          </select>
+          <CategorySelect categories={categories} name="category" id="category" />
           <SearchInput
             id="search-q"
             className="w-full bg-white px-4 py-3 text-base text-brand focus:outline-none"
@@ -81,15 +66,6 @@ export async function Header() {
             <span className="block text-xs text-gray-300">Returns</span>
             <span className="font-semibold">&amp; Orders</span>
           </Link>
-          {admin && (
-            <Link
-              href="/admin"
-              className="hidden items-center gap-1 rounded-sm px-1 py-1 hover:outline hover:outline-white md:flex"
-            >
-              <ShieldCheck className="h-4 w-4" />
-              <span className="font-semibold">Admin</span>
-            </Link>
-          )}
           <Link
             href="/cart"
             aria-label="Cart"

@@ -1,7 +1,6 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
-import { currentUser } from "@clerk/nextjs/server";
 
 const SESSION_COOKIE = "kartify_admin_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12; // 12 hours
@@ -12,19 +11,6 @@ function adminEmails(): string[] {
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
-}
-
-/** Clerk-verified identity + email allowlist — the first, always-required gate. */
-export async function getAdminUser() {
-  const user = await currentUser();
-  const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase();
-  if (!email || !adminEmails().includes(email)) return null;
-  return user;
-}
-
-function signSessionToken(userId: string): string {
-  const secret = process.env.ADMIN_PASSWORD ?? "";
-  return createHmac("sha256", secret).update(userId).digest("hex");
 }
 
 /**
@@ -39,29 +25,45 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
-export function verifyAdminPassword(email: string, password: string, actualEmail: string): boolean {
-  const expectedPassword = process.env.ADMIN_PASSWORD ?? "";
-  if (!expectedPassword) return false; // never succeed if the operator hasn't set one
-  const emailMatches = safeEqual(email.trim().toLowerCase(), actualEmail.trim().toLowerCase());
-  const passwordMatches = safeEqual(password, expectedPassword);
-  return emailMatches && passwordMatches;
+/**
+ * The session token doesn't need to identify anyone — it only needs to prove
+ * the holder already passed the email/password check once. Deriving it from
+ * ADMIN_PASSWORD also means rotating that env var invalidates every existing
+ * session automatically.
+ */
+function sessionToken(): string {
+  const secret = process.env.ADMIN_PASSWORD ?? "";
+  return createHmac("sha256", secret).update("kartify-admin-session").digest("hex");
 }
 
-/** Second gate, on top of Clerk auth — a shared password re-entered explicitly to open the dashboard. */
-export async function hasAdminSession(userId: string): Promise<boolean> {
+/**
+ * The only gate: a shared email + password, unrelated to Clerk sign-in — so
+ * the dashboard is reachable from any device or account that knows the
+ * credentials, not just whoever is signed into a specific allowlisted
+ * Clerk account on this browser.
+ */
+export function verifyAdminPassword(email: string, password: string): boolean {
+  const expectedPassword = process.env.ADMIN_PASSWORD ?? "";
+  if (!expectedPassword) return false; // never succeed if the operator hasn't set one
+  const emailAllowed = adminEmails().includes(email.trim().toLowerCase());
+  const passwordMatches = safeEqual(password, expectedPassword);
+  return emailAllowed && passwordMatches;
+}
+
+export async function hasAdminSession(): Promise<boolean> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return false;
-  return safeEqual(token, signSessionToken(userId));
+  return safeEqual(token, sessionToken());
 }
 
-export async function createAdminSession(userId: string): Promise<void> {
+export async function createAdminSession(): Promise<void> {
   const store = await cookies();
-  store.set(SESSION_COOKIE, signSessionToken(userId), {
+  store.set(SESSION_COOKIE, sessionToken(), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    path: "/admin",
+    path: "/",
     maxAge: SESSION_MAX_AGE_SECONDS,
   });
 }
