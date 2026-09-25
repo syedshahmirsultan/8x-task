@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useProductImage } from "@/components/product-image-context";
 import type { Product } from "@/data/types";
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/format";
@@ -12,8 +14,17 @@ export function ProductOptions({ product }: { product: Product }) {
   const router = useRouter();
   const { addItem } = useCart();
   const hasVariants = (product.variants?.length ?? 0) > 0;
-  const [selectedVariantId, setSelectedVariantId] = useState(product.variants?.[0]?.id);
+  const shared = useProductImage();
+  const [localVariantId, setLocalVariantId] = useState(product.variants?.[0]?.id);
+  // Shared with the gallery when inside ProductImageProvider, so clicking a
+  // version's photo there selects it here too.
+  const selectedVariantId = shared?.selectedVariantId ?? localVariantId;
   const [rawQuantity, setRawQuantity] = useState(1);
+
+  function selectVariant(variant: NonNullable<Product["variants"]>[number]) {
+    (shared?.setSelectedVariantId ?? setLocalVariantId)(variant.id);
+    if (variant.image) shared?.setActiveImage(variant.image);
+  }
 
   const selectedVariant = useMemo(
     () => product.variants?.find((v) => v.id === selectedVariantId),
@@ -63,14 +74,21 @@ export function ProductOptions({ product }: { product: Product }) {
               <button
                 key={variant.id}
                 type="button"
-                onClick={() => setSelectedVariantId(variant.id)}
+                onClick={() => selectVariant(variant)}
                 disabled={variant.stock === 0}
-                className={`cursor-pointer rounded-md border px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                  variant.image ? "pl-1.5" : ""
+                } ${
                   variant.id === selectedVariantId
                     ? "border-accent-buy bg-accent-buy/10 font-semibold"
                     : "border-border hover:border-link"
                 }`}
               >
+                {variant.image && (
+                  <span className="relative h-9 w-9 shrink-0 overflow-hidden rounded bg-background">
+                    <Image src={variant.image} alt="" fill sizes="36px" className="object-cover" />
+                  </span>
+                )}
                 {variant.label}
               </button>
             ))}

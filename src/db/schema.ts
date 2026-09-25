@@ -60,6 +60,21 @@ export const productVariants = pgTable("product_variants", {
   price: integer().notNull(),
   stock: integer().notNull(),
   image: text(),
+  /** Display order on the PDP; the first version is the default selection. */
+  sortOrder: integer().notNull().default(0),
+});
+
+/**
+ * Images uploaded from the admin panel, served by /api/images/[id]. Kept in
+ * Postgres (base64) rather than a blob store so uploads work on Vercel's
+ * read-only filesystem without another paid service; the admin UI resizes
+ * and re-encodes to WebP before upload, keeping each row small.
+ */
+export const uploadedImages = pgTable("uploaded_images", {
+  id: text().primaryKey(),
+  contentType: text().notNull(),
+  data: text().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
 });
 
 export const orders = pgTable("orders", {

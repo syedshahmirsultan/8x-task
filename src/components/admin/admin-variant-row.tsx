@@ -46,6 +46,7 @@ export function AdminVariantRow({ id, label, priceCents, stock }: Props) {
 
   return (
     <tr className="border-b border-border/60 bg-background/40 text-xs">
+      <td />
       <td className="py-1.5 pr-4 pl-6 text-gray-500">↳ {label}</td>
       <td className="py-1.5 pr-4">
         <div className="flex items-center gap-1">

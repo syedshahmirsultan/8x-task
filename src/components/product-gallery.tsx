@@ -2,9 +2,23 @@
 
 import { useState, type MouseEvent } from "react";
 import Image from "next/image";
+import { useProductImage } from "@/components/product-image-context";
 
-export function ProductGallery({ images, title }: { images: string[]; title: string }) {
-  const [activeIndex, setActiveIndex] = useState(0);
+export function ProductGallery({
+  images,
+  title,
+  variants = [],
+}: {
+  images: string[];
+  title: string;
+  /** Versions with their own photo — clicking that photo selects the version. */
+  variants?: { id: string; image?: string }[];
+}) {
+  const shared = useProductImage();
+  const [localImage, setLocalImage] = useState(images[0]);
+  // A selected version's photo (from ProductOptions) wins over the local pick.
+  const activeImage = shared?.activeImage ?? localImage;
+  const setActiveImage = shared?.setActiveImage ?? setLocalImage;
   const [zoomOrigin, setZoomOrigin] = useState("50% 50%");
   const [zoomed, setZoomed] = useState(false);
 
@@ -23,11 +37,15 @@ export function ProductGallery({ images, title }: { images: string[]; title: str
             <button
               key={image}
               type="button"
-              onClick={() => setActiveIndex(index)}
+              onClick={() => {
+                setActiveImage(image);
+                const variant = variants.find((v) => v.image === image);
+                if (variant) shared?.setSelectedVariantId(variant.id);
+              }}
               aria-label={`Show image ${index + 1} of ${images.length}`}
-              aria-current={index === activeIndex}
+              aria-current={image === activeImage}
               className={`relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-md border-2 transition-colors ${
-                index === activeIndex
+                image === activeImage
                   ? "border-accent-buy"
                   : "border-border hover:border-link"
               }`}
@@ -48,7 +66,7 @@ export function ProductGallery({ images, title }: { images: string[]; title: str
         onMouseLeave={() => setZoomed(false)}
       >
         <Image
-          src={images[activeIndex]}
+          src={activeImage}
           alt={title}
           fill
           priority

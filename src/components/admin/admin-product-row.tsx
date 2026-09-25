@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { toast } from "sonner";
 import { AdminVariantRow } from "@/components/admin/admin-variant-row";
 
@@ -14,12 +16,13 @@ interface Variant {
 interface Props {
   id: string;
   title: string;
+  image: string;
   priceCents: number;
   stock: number;
   variants: Variant[];
 }
 
-export function AdminProductRow({ id, title: initialTitle, priceCents, stock, variants }: Props) {
+export function AdminProductRow({ id, title: initialTitle, image, priceCents, stock, variants }: Props) {
   const hasVariants = variants.length > 0;
   const initialPrice = (priceCents / 100).toFixed(2);
   const [title, setTitle] = useState(initialTitle);
@@ -67,6 +70,11 @@ export function AdminProductRow({ id, title: initialTitle, priceCents, stock, va
   return (
     <>
       <tr className="border-b border-border/60 last:border-0">
+        <td className="py-2 pr-3">
+          <div className="relative h-10 w-10 overflow-hidden rounded-md border border-border bg-background">
+            <Image src={image} alt="" fill sizes="40px" className="object-cover" />
+          </div>
+        </td>
         <td className="py-2 pr-4">
           <input
             value={title}
@@ -102,7 +110,12 @@ export function AdminProductRow({ id, title: initialTitle, priceCents, stock, va
             </td>
           </>
         )}
-        <td className="py-2 text-xs text-gray-400">{saving ? "Saving…" : null}</td>
+        <td className="py-2 text-right text-xs whitespace-nowrap text-gray-400">
+          {saving ? "Saving…" : null}
+          <Link href={`/admin/products/${id}`} className="ml-2 text-sm font-medium text-link hover:underline">
+            Edit
+          </Link>
+        </td>
       </tr>
       {hasVariants &&
         variants.map((variant) => (
