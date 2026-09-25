@@ -5,3 +5,14 @@ export function formatPrice(cents: number, currency = "USD"): string {
     currency,
   }).format(cents / 100);
 }
+
+/** "Noise-Cancelling Headphones (2nd Gen)" -> "noise-cancelling-headphones-2nd-gen". */
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}

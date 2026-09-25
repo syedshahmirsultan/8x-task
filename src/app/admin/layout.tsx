@@ -20,6 +20,9 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
         <Link href="/admin/products" className="block rounded-md px-3 py-2 font-medium hover:bg-background">
           Products
         </Link>
+        <Link href="/admin/categories" className="block rounded-md px-3 py-2 font-medium hover:bg-background">
+          Categories
+        </Link>
         <Link href="/admin/orders" className="block rounded-md px-3 py-2 font-medium hover:bg-background">
           Orders
         </Link>
