@@ -15,9 +15,9 @@ export function AdminLogoutButton() {
     <button
       type="button"
       onClick={handleLogout}
-      className="flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left font-medium text-gray-500 hover:bg-background"
+      className="flex h-10 w-full cursor-pointer items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-ink-2 transition-colors hover:bg-paper-2 hover:text-accent-strong"
     >
-      <LogOut className="h-4 w-4" />
+      <LogOut className="h-[1.1rem] w-[1.1rem]" />
       Log out
     </button>
   );

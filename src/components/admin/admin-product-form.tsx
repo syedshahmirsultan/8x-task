@@ -34,7 +34,7 @@ function toCount(value: string): number | null {
 
 function Section({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
-    <section className="rounded-lg border border-border bg-white p-5">
+    <section className="rounded-3xl bg-white p-6 ring-1 ring-ink/[0.05]">
       <h2 className="font-semibold">{title}</h2>
       {hint && <p className="mt-0.5 text-xs text-gray-500">{hint}</p>}
       <div className="mt-4 space-y-4">{children}</div>
@@ -347,13 +347,13 @@ export function AdminProductForm({ product, categories }: { product?: Product; c
       </Section>
 
       <div className="flex items-center justify-end gap-3">
-        <Link href="/admin/products" className="rounded-md px-4 py-2 text-sm font-medium hover:bg-background">
+        <Link href="/admin/products" className="flex h-11 items-center rounded-full px-5 text-sm font-medium text-ink-2 hover:bg-white hover:text-ink">
           Cancel
         </Link>
         <button
           type="submit"
           disabled={saving}
-          className="cursor-pointer rounded-md bg-brand-secondary px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-secondary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-11 cursor-pointer rounded-full bg-accent-cart px-6 text-sm font-semibold text-ink transition-colors hover:bg-accent-cart-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? "Saving…" : isEdit ? "Save changes" : "Add product"}
         </button>

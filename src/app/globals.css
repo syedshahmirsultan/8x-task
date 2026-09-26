@@ -1,8 +1,26 @@
 @import "tailwindcss";
 
+/* Kartify design system — the original brand palette (navy, orange, yellow
+   from the logo) behind semantic names that new components use. */
 :root {
-  /* Page canvas is a soft gray, not pure white — matches the density of a
-     catalog UI better and makes white product cards pop. */
+  --color-paper: #ffffff; /* cards, menus, dialogs */
+  --color-paper-2: #f3f4f4; /* hover wash, quiet panels */
+  --color-surface: #f3f4f4; /* photo wells */
+  --color-surface-raised: #ffffff;
+  --color-ink: #131921; /* brand navy — text, dark UI */
+  --color-ink-2: #565959;
+  --color-muted: #767676;
+  --color-line: #d5d9d9;
+  --color-line-strong: #b9c0c0;
+  --color-accent: #ffa41c; /* logo orange */
+  --color-accent-strong: #b12704; /* sale prices */
+  --color-focus: #e77600;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Page canvas is a soft gray, not pure white — makes white cards pop. */
   --background: #eaeded;
   --foreground: #0f1111;
 
@@ -36,8 +54,41 @@
   --color-price: var(--color-price);
   --color-success: var(--color-success);
   --color-border: var(--color-border);
+  --color-paper: var(--color-paper);
+  --color-paper-2: var(--color-paper-2);
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-ink: var(--color-ink);
+  --color-ink-2: var(--color-ink-2);
+  --color-muted: var(--color-muted);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
+  --color-accent: var(--color-accent);
+  --color-accent-strong: var(--color-accent-strong);
+  --color-focus: var(--color-focus);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --ease-out: var(--ease-out);
+  --ease-in: var(--ease-in);
+  --ease-in-out: var(--ease-in-out);
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+/* In the base layer so a component's own focus style (a ring, or
+   outline-none inside a ringed field) can override it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
 
 body {
@@ -56,7 +107,7 @@ body {
 }
 
 .animate-marquee {
-  animation: marquee 30s linear infinite;
+  animation: marquee 80s linear infinite;
 }
 
 .animate-marquee:hover,
@@ -97,15 +148,26 @@ body {
    avoids repeating the same utility string on every <input>. */
 .input-field {
   width: 100%;
-  border-radius: 0.375rem;
-  border: 1px solid var(--color-border);
-  padding: 0.5rem 0.75rem;
+  min-height: 2.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  background: var(--color-paper-2);
+  padding: 0.5rem 0.875rem;
   font-size: 0.875rem;
+  color: var(--color-ink);
+  transition:
+    background-color 150ms var(--ease-out),
+    box-shadow 150ms var(--ease-out);
+}
+
+.input-field:hover {
+  background: color-mix(in oklab, var(--color-paper-2) 70%, var(--color-line));
 }
 
 .input-field:focus {
   outline: none;
-  border-color: var(--color-link);
+  background: var(--color-paper);
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 
 /* Slim, auto-hiding scrollbar for horizontally-scrolling strips (the chat
@@ -140,4 +202,105 @@ body {
 
 .overlay-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #a8adad;
+}
+
+/* ─── Kartify motion ───────────────────────────────────────────── */
+
+@keyframes badge-bump {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.animate-badge-bump {
+  animation: badge-bump 360ms var(--ease-out);
+}
+
+/* Dropdown panels (search suggestions, mobile search row) drop in softly. */
+.animate-dropdown-in {
+  animation: dropdown-in 220ms var(--ease-out);
+}
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-badge-bump,
+  .animate-dropdown-in {
+    animation: none;
+  }
+}
+
+@keyframes hero-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.animate-hero-progress {
+  animation-name: hero-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 380ms var(--ease-out);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* One-time scroll reveal (see reveal.tsx). Content stays visible for
+   anyone who prefers reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal] {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 700ms var(--ease-out),
+      transform 700ms var(--ease-out);
+  }
+  [data-reveal][data-shown] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in {
+    animation: none;
+  }
+}
+
+/* Result cards rise in with a short stagger whenever the result set changes. */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+.animate-card-in {
+  animation: card-in 480ms var(--ease-out) backwards; /* not "both": a held end frame would override the hover lift */
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-in {
+    animation: none;
+  }
+}
+
+.lightbox[open] {
+  animation: fade-in 220ms var(--ease-out);
+}
+.lightbox[open]::backdrop {
+  animation: fade-in 220ms var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lightbox[open],
+  .lightbox[open]::backdrop {
+    animation: none;
+  }
 }

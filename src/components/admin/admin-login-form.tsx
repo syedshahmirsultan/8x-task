@@ -39,14 +39,14 @@ export function AdminLoginForm() {
 
   return (
     <main id="main-content" className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-16">
-      <div className="rounded-lg border border-border bg-white p-6">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-brand-secondary" />
-          <h1 className="text-lg font-semibold">Admin access</h1>
-        </div>
-        <p className="mt-1 text-sm text-gray-500">Confirm your admin email and password to continue.</p>
+      <div className="rounded-3xl bg-white p-7 shadow-[0_24px_60px_-30px_rgb(19_25_33/0.45)] ring-1 ring-ink/[0.05]">
+        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-brand text-accent">
+          <ShieldCheck className="h-6 w-6" />
+        </span>
+        <h1 className="mt-5 text-xl font-semibold tracking-tight text-ink">Admin access</h1>
+        <p className="mt-1 text-sm text-ink-2">Confirm your admin email and password to continue.</p>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label htmlFor="admin-email" className="mb-1 block text-sm font-medium">
               Email
@@ -85,11 +85,15 @@ export function AdminLoginForm() {
               </button>
             </div>
           </div>
-          {error && <p className="text-sm text-price">{error}</p>}
+          {error && (
+            <p role="alert" className="rounded-xl bg-accent-strong/10 px-3 py-2 text-sm text-accent-strong">
+              {error}
+            </p>
+          )}
           <button
             type="submit"
             disabled={submitting}
-            className="w-full cursor-pointer rounded-md bg-brand-secondary py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-secondary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="h-11 w-full cursor-pointer rounded-full bg-brand text-sm font-semibold text-white transition-colors hover:bg-brand-secondary-hover disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Verifying…" : "Continue"}
           </button>

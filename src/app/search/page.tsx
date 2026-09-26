@@ -1,67 +1,48 @@
-import { ProductFilterForm } from "@/components/product-filter-form";
-import { ProductGrid } from "@/components/product-grid";
-import type { Product } from "@/data/types";
-import { getAllCategories, getCategoryBySlug } from "@/lib/categories";
-import {
-  filterAndSortProducts,
-  parsePriceParam,
-  parseSearchParam,
-  type SortOption,
-} from "@/lib/product-filters";
-import { getAllProducts, getProductsByCategory, searchProducts } from "@/lib/products";
+import { ListingHero } from "@/components/listing-hero";
+import { ProductBrowser, type ListingState } from "@/components/product-browser";
+import { getAllCategories } from "@/lib/categories";
+import { parseListingParams } from "@/lib/product-filters";
+import { getAllProducts, searchProducts } from "@/lib/products";
 
 export default async function SearchPage(props: PageProps<"/search">) {
-  const searchParams = await props.searchParams;
-  const query = parseSearchParam(searchParams.q) ?? "";
-  const categorySlug = parseSearchParam(searchParams.category);
-  const minPrice = parsePriceParam(searchParams.minPrice);
-  const maxPrice = parsePriceParam(searchParams.maxPrice);
-  const sort = parseSearchParam(searchParams.sort) as SortOption | undefined;
-
-  const [category, categories] = await Promise.all([
-    categorySlug ? getCategoryBySlug(categorySlug) : Promise.resolve(undefined),
+  const params = parseListingParams(await props.searchParams);
+  const { query } = params;
+  // An empty query browses everything rather than showing nothing.
+  const [products, categories] = await Promise.all([
+    query ? searchProducts(query) : getAllProducts(),
     getAllCategories(),
   ]);
-
-  // An empty query browses instead of showing nothing — scoped to the
-  // selected category, or the whole catalog when "All" is selected.
-  let matches: Product[];
-  if (query) {
-    matches = await searchProducts(query);
-  } else if (category) {
-    matches = await getProductsByCategory(category.id);
-  } else {
-    matches = await getAllProducts();
-  }
-
-  const products = filterAndSortProducts(matches, {
-    category: category?.id,
-    minPrice,
-    maxPrice,
-    sort,
-  });
+  const initial: ListingState = {
+    categorySlug: params.categorySlug,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    onSale: params.onSale,
+    inStock: params.inStock,
+    sort: params.sort,
+  };
 
   return (
-    <main id="main-content" className="mx-auto grid w-full max-w-6xl flex-1 gap-6 px-4 py-8 md:grid-cols-[220px_1fr]">
-      <aside>
-        <ProductFilterForm
-          action="/search"
+    <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 px-4 pt-4 sm:px-6 sm:pt-6">
+      <ListingHero
+        title={query ? `“${query}”` : "Search"}
+        description={
+          query
+            ? products.length
+              ? `${products.length} ${products.length === 1 ? "match" : "matches"} for your search.`
+              : "No matches yet — try another word, or browse a category below."
+            : "Browse everything, or press / to search."
+        }
+        images={products.map((p) => p.images[0])}
+      />
+      <div className="mt-4">
+        <ProductBrowser
+          key={`${query}|${JSON.stringify(initial)}`}
+          products={products}
           categories={categories}
-          activeCategory={categorySlug}
-          minPrice={minPrice}
-          maxPrice={maxPrice}
-          sort={sort}
-          extraFields={query ? { q: query } : undefined}
+          initial={initial}
+          basePath="/search"
+          query={query || undefined}
         />
-      </aside>
-      <div>
-        <h1 className="mb-4 text-xl font-semibold">
-          {query ? `Results for "${query}"` : (category?.name ?? "All Products")}
-          <span className="ml-2 text-sm font-normal text-gray-500">
-            {products.length} results
-          </span>
-        </h1>
-        <ProductGrid products={products} />
       </div>
     </main>
   );

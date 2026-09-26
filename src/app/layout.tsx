@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
+import { AppToaster } from "@/components/app-toaster";
 import { ChatWidget } from "@/components/chat-widget";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <body className="flex min-h-full flex-col">
           <a
             href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-brand focus:outline-2 focus:outline-accent-buy"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
           >
             Skip to main content
           </a>
@@ -44,17 +44,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Footer />
             <ChatWidget />
           </CartProvider>
-          <Toaster
-            position="top-right"
-            closeButton
-            toastOptions={{
-              classNames: {
-                toast: "!bg-white !border-border !text-foreground !shadow-lg",
-                title: "!text-sm !font-medium",
-                closeButton: "!bg-white !border-border !text-foreground",
-              },
-            }}
-          />
+          <AppToaster />
         </body>
       </html>
     </ClerkProvider>
