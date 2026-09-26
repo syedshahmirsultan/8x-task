@@ -1,8 +1,9 @@
 import { randomUUID } from "crypto";
-import { and, asc, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, ne, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { productVariants, products } from "@/db/schema";
+import { categories, productVariants, products } from "@/db/schema";
 import type { Product } from "@/data/types";
+import { rankProducts } from "@/lib/search";
 
 // Thin query functions over the database — components import from here,
 // never touch @/db directly, so this file is the only thing that changes
@@ -148,19 +149,14 @@ export async function decrementStock(
   }
 }
 
+/** Forgiving, ranked search over the whole catalog — see lib/search.ts. */
 export async function searchProducts(query: string): Promise<Product[]> {
-  const q = query.trim();
-  if (!q) return [];
-  const pattern = `%${q}%`;
-  const rows = await db.query.products.findMany({
-    where: or(
-      ilike(products.title, pattern),
-      ilike(products.brand, pattern),
-      ilike(products.description, pattern),
-    ),
-    with: withVariants,
-  });
-  return rows.map(toProduct);
+  if (!query.trim()) return [];
+  const [rows, categoryRows] = await Promise.all([
+    db.query.products.findMany({ with: withVariants }),
+    db.select().from(categories),
+  ]);
+  return rankProducts(rows.map(toProduct), categoryRows, query);
 }
 
 export async function getProductById(id: string): Promise<Product | undefined> {

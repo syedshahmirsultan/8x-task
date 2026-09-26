@@ -24,8 +24,10 @@ export function ProductCard({
   const discount = onSale ? Math.round((1 - product.price / product.compareAtPrice!) * 100) : 0;
   // On hover the photo crossfades to the next version's photo — a preview of
   // what else is on offer without opening the product.
-  const [primary, secondary] = product.images;
-  const versionImages = (product.variants ?? []).flatMap((v) => (v.image ? [v.image] : [])).slice(0, 4);
+  // Products added in the admin keep version photos on the versions rather
+  // than in `images`, so draw from both to find a second photo.
+  const versionImages = (product.variants ?? []).flatMap((v) => (v.image ? [v.image] : []));
+  const [primary, secondary] = [...new Set([...product.images, ...versionImages])];
 
   return (
     <li
@@ -87,11 +89,11 @@ export function ProductCard({
           </p>
           {versionImages.length > 1 && (
             <span className="hidden items-center sm:flex" aria-label={`${product.variants!.length} options`}>
-              {versionImages.map((image, i) => (
+              {versionImages.slice(0, 4).map((image, i) => (
                 <span
                   key={image}
                   className="relative -ml-1.5 h-5 w-5 overflow-hidden rounded-full bg-surface ring-2 ring-white first:ml-0"
-                  style={{ zIndex: versionImages.length - i }}
+                  style={{ zIndex: 4 - i }}
                 >
                   <Image src={image} alt="" fill sizes="20px" className="object-cover" />
                 </span>
