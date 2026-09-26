@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { toast } from "sonner";
+import { ExternalLink, PenLine } from "lucide-react";
 import { AdminVariantRow } from "@/components/admin/admin-variant-row";
+import { SaveIndicator, type SaveStatus } from "@/components/admin/save-indicator";
 
 interface Variant {
   id: string;
@@ -14,18 +18,20 @@ interface Variant {
 interface Props {
   id: string;
   title: string;
+  image: string;
+  slug: string;
   priceCents: number;
   stock: number;
   variants: Variant[];
 }
 
-export function AdminProductRow({ id, title: initialTitle, priceCents, stock, variants }: Props) {
+export function AdminProductRow({ id, title: initialTitle, image, slug, priceCents, stock, variants }: Props) {
   const hasVariants = variants.length > 0;
   const initialPrice = (priceCents / 100).toFixed(2);
   const [title, setTitle] = useState(initialTitle);
   const [price, setPrice] = useState(initialPrice);
   const [stockValue, setStockValue] = useState(stock);
-  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<SaveStatus>("idle");
   const savedRef = useRef({ title: initialTitle, price: initialPrice, stock });
 
   useEffect(() => {
@@ -40,7 +46,7 @@ export function AdminProductRow({ id, title: initialTitle, priceCents, stock, va
     }
 
     const timeout = setTimeout(async () => {
-      setSaving(true);
+      setStatus("saving");
       try {
         const res = await fetch(`/api/admin/products/${id}`, {
           method: "PATCH",
@@ -53,11 +59,11 @@ export function AdminProductRow({ id, title: initialTitle, priceCents, stock, va
         });
         if (!res.ok) throw new Error();
         savedRef.current = { title: titleTrimmed, price, stock: stockValue };
-        toast.success(`${titleTrimmed} updated.`);
+        setStatus("saved");
+        setTimeout(() => setStatus((s) => (s === "saved" ? "idle" : s)), 1800);
       } catch {
-        toast.error("Couldn't save changes.");
-      } finally {
-        setSaving(false);
+        setStatus("idle");
+        toast.error(`Couldn't save ${titleTrimmed}.`);
       }
     }, 800);
 
@@ -66,8 +72,13 @@ export function AdminProductRow({ id, title: initialTitle, priceCents, stock, va
 
   return (
     <>
-      <tr className="border-b border-border/60 last:border-0">
-        <td className="py-2 pr-4">
+      <tr className="border-t border-line transition-colors first:border-t-0 hover:bg-paper-2/50">
+        <td className="py-3 pr-3 pl-5">
+          <div className="relative h-11 w-11 overflow-hidden rounded-xl bg-surface">
+            <Image src={image} alt="" fill sizes="44px" className="object-cover" />
+          </div>
+        </td>
+        <td className="py-3 pr-4">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -75,14 +86,14 @@ export function AdminProductRow({ id, title: initialTitle, priceCents, stock, va
           />
         </td>
         {hasVariants ? (
-          <td className="py-2 pr-4 text-xs text-gray-400" colSpan={2}>
-            {variants.length} variant{variants.length > 1 ? "s" : ""} — edit price/stock below
+          <td className="py-3 pr-4 text-xs text-muted" colSpan={2}>
+            {variants.length} versions · edit price and stock below
           </td>
         ) : (
           <>
-            <td className="py-2 pr-4">
+            <td className="py-3 pr-4">
               <div className="flex items-center gap-1">
-                <span className="text-gray-400">$</span>
+                <span className="text-muted">$</span>
                 <input
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
@@ -91,7 +102,7 @@ export function AdminProductRow({ id, title: initialTitle, priceCents, stock, va
                 />
               </div>
             </td>
-            <td className="py-2 pr-4">
+            <td className="py-3 pr-4">
               <input
                 type="number"
                 min={0}
@@ -102,7 +113,26 @@ export function AdminProductRow({ id, title: initialTitle, priceCents, stock, va
             </td>
           </>
         )}
-        <td className="py-2 text-xs text-gray-400">{saving ? "Saving…" : null}</td>
+        <td className="py-3 pr-5 text-right">
+          <div className="flex items-center justify-end gap-1.5">
+            <SaveIndicator status={status} />
+            <Link
+              href={`/products/${slug}`}
+              target="_blank"
+              aria-label={`View ${title} in the store`}
+              className="grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-white hover:text-ink"
+            >
+              <ExternalLink className="h-4 w-4" />
+            </Link>
+            <Link
+              href={`/admin/products/${id}`}
+              className="flex h-9 items-center gap-1.5 rounded-full bg-white px-3.5 text-sm font-medium text-ink ring-1 ring-ink/10 transition-colors hover:bg-ink hover:text-white"
+            >
+              <PenLine className="h-3.5 w-3.5" />
+              Edit
+            </Link>
+          </div>
+        </td>
       </tr>
       {hasVariants &&
         variants.map((variant) => (

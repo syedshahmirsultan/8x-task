@@ -1,43 +1,72 @@
-import { BackToTopButton } from "@/components/back-to-top-button";
+import Link from "next/link";
+import { Lock } from "lucide-react";
+import { Logo } from "@/components/logo";
+import { getAllCategories } from "@/lib/categories";
 import { siteConfig } from "@/lib/site-config";
 
-const footerColumns: { title: string; links: string[] }[] = [
-  { title: "Get to Know Us", links: ["About Us", "Careers", "Press Releases"] },
-  {
-    title: "Make Money with Us",
-    links: [`Sell on ${siteConfig.name}`, "Become an Affiliate", "Advertise Your Products"],
-  },
-  { title: "Payment Products", links: ["Business Card", "Shop with Points", "Gift Cards"] },
-  { title: "Let Us Help You", links: ["Your Account", "Returns & Orders", "Help Center"] },
-];
+export async function Footer() {
+  const categories = await getAllCategories();
+  // Only links to pages that exist — no placeholder "Careers" or "Press".
+  const columns: { title: string; links: { label: string; href: string }[] }[] = [
+    {
+      title: "Shop",
+      links: [
+        { label: "All products", href: "/products" },
+        { label: "Under $50", href: "/products?maxPrice=50" },
+      ],
+    },
+    {
+      title: "Categories",
+      links: categories.map((c) => ({ label: c.name, href: `/category/${c.slug}` })),
+    },
+    {
+      title: "Your account",
+      links: [
+        { label: "Account", href: "/account" },
+        { label: "Orders", href: "/account/orders" },
+        { label: "Cart", href: "/cart" },
+      ],
+    },
+  ];
 
-export function Footer() {
   return (
-    <footer className="mt-12 bg-brand text-white">
-      <BackToTopButton />
-
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 py-10 sm:grid-cols-4">
-        {footerColumns.map((column) => (
-          <div key={column.title}>
-            <h3 className="mb-3 cursor-pointer text-sm font-semibold transition-colors hover:text-gray-300 hover:underline">
-              {column.title}
-            </h3>
-            <ul className="space-y-2 text-sm text-gray-300">
-              {column.links.map((link) => (
-                <li
-                  key={link}
-                  className="cursor-pointer transition-colors hover:text-white hover:underline"
-                >
-                  {link}
-                </li>
-              ))}
-            </ul>
+    <footer className="mt-24 bg-brand text-white">
+      <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 sm:pt-20">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+          <div className="max-w-xs">
+            <Logo />
+            <p className="mt-5 text-sm leading-relaxed text-white/65">
+              Everyday essentials, chosen with care, from headphones to books.
+            </p>
           </div>
-        ))}
-      </div>
+          {columns.map((column) => (
+            <nav key={column.title} aria-label={column.title}>
+              <h2 className="text-sm font-semibold text-white">{column.title}</h2>
+              <ul className="mt-4 space-y-3">
+                {column.links.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-sm whitespace-nowrap text-white/65 transition-colors hover:text-accent"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
+        </div>
 
-      <div className="border-t border-white/10 px-4 py-4 text-center text-xs text-gray-400">
-        © {new Date().getFullYear()} {siteConfig.name}. Built for demo purposes only.
+        <div className="mt-14 flex flex-col gap-3 border-t border-white/10 py-7 text-xs text-white/50 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            © {new Date().getFullYear()} {siteConfig.name}. A portfolio project.
+          </p>
+          <p className="flex items-center gap-2">
+            <Lock className="h-3.5 w-3.5" />
+            Secure checkout by Stripe — test mode, no real charges
+          </p>
+        </div>
       </div>
     </footer>
   );

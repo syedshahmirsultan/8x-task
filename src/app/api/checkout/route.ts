@@ -28,11 +28,21 @@ export async function POST(request: Request) {
   const lineItems: Array<{
     price_data: {
       currency: string;
-      product_data: { name: string; images: string[]; metadata: { productId: string; variantId: string } };
+      product_data: { name: string; images: string[]; metadata: { productId: string; variantId: string; image: string } };
       unit_amount: number;
     };
     quantity: number;
   }> = [];
+
+  const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
+  // Stripe needs absolute, publicly reachable image URLs — admin uploads are
+  // stored as site-relative /api/images/... paths, and a localhost URL is
+  // useless to Stripe, so drop anything that isn't public https.
+  const stripeImage = (src: string | undefined): string[] => {
+    if (!src) return [];
+    const absolute = new URL(src, siteUrl).toString();
+    return absolute.startsWith("https://") && !absolute.startsWith("https://localhost") ? [absolute] : [];
+  };
 
   for (const item of items) {
     const product = await db.query.products.findFirst({
@@ -64,8 +74,10 @@ export async function POST(request: Request) {
         // and decrement the right stock row once the order is fulfilled.
         product_data: {
           name: title,
-          images: image ? [image] : [],
-          metadata: { productId: product.id, variantId: item.variantId ?? "" },
+          images: stripeImage(image),
+          // Our own image path too, since stripeImage() may drop it (order
+          // history needs it even when Stripe can't display it).
+          metadata: { productId: product.id, variantId: item.variantId ?? "", image: image ?? "" },
         },
         unit_amount: price,
       },
@@ -76,8 +88,6 @@ export async function POST(request: Request) {
   if (lineItems.length === 0) {
     return NextResponse.json({ error: "No valid items in cart" }, { status: 400 });
   }
-
-  const siteUrl = process.env.SITE_URL ?? "http://localhost:3000";
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",

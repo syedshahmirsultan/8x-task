@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { hasAdminSession } from "@/lib/admin";
@@ -17,5 +18,6 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/admin/vari
   if (!parsed.success) return NextResponse.json({ error: "Invalid variant fields." }, { status: 400 });
 
   await updateVariantListing(id, parsed.data);
+  revalidatePath("/", "layout");
   return NextResponse.json({ success: true });
 }

@@ -1,6 +1,4 @@
-// Shared shapes for the mock data in src/data/*.
-// Mirrors the eventual DB schema so swapping fixtures for real queries
-// later is a data-source change, not a component rewrite.
+// Shared shapes used across the app (UI components and the DB query layer).
 
 /** Prices are stored as integer cents (USD) to avoid float rounding errors. */
 export type Money = number;

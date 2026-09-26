@@ -56,7 +56,7 @@ export async function POST(request: Request) {
           const mapped = items.map((item, index) => {
             const product = item.price?.product;
             const isExpandedProduct = product && typeof product === "object" && "images" in product;
-            const image = isExpandedProduct ? (product.images?.[0] ?? "") : "";
+            const image = isExpandedProduct ? (product.metadata?.image || product.images?.[0] || "") : "";
             // Set in /api/checkout's product_data.metadata — links this
             // line item back to our real product (and variant, for stock),
             // so we can later verify "did this user actually buy this?"

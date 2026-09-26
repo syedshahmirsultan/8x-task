@@ -2,23 +2,21 @@ import "server-only";
 import { groq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 import { formatPrice } from "@/lib/format";
-import { getCachedAiSummary, saveAiSummary } from "@/lib/products";
 import type { Review } from "@/lib/reviews";
 import type { Product } from "@/data/types";
 
 /**
- * Cached in the products table, keyed by review count — regenerated only
- * when a new review actually changes the count, not on every page view.
+ * Generated fresh on every request from the product's current row and its
+ * current reviews — deliberately not cached. A cache keyed on review count
+ * served stale text whenever a review was deleted and another added (same
+ * count, different content), and never noticed admin edits to price or
+ * description at all. It only runs when a shopper clicks "Generate
+ * Summary", so the cost of always regenerating is small.
  */
-export async function getOrGenerateProductSummary(
+export async function generateProductSummary(
   product: Product,
   productReviews: Review[],
 ): Promise<string | null> {
-  const cached = await getCachedAiSummary(product.id);
-  if (cached?.aiSummary && cached.aiSummaryReviewCount === productReviews.length) {
-    return cached.aiSummary;
-  }
-
   const reviewsBlock =
     productReviews.length > 0
       ? productReviews
@@ -27,26 +25,28 @@ export async function getOrGenerateProductSummary(
           .join("\n")
       : "(No customer reviews yet.)";
 
+  const variantPrices = product.variants?.length
+    ? `\nOptions: ${product.variants.map((v) => `${v.label} (${formatPrice(v.price)})`).join(", ")}`
+    : "";
+
   const prompt = `Product: ${product.title} by ${product.brand}
-Price: ${formatPrice(product.price)}
+Price: ${formatPrice(product.price)}${variantPrices}
 Description: ${product.description}
 Key features: ${product.bullets.join("; ")}
 
 Customer reviews:
 ${reviewsBlock}
 
-Write a short, honest 2-3 sentence summary for a shopper deciding whether to buy this. Blend the product's own description with what reviewers actually say (if any reviews exist) — call out genuine praise and any recurring complaints. Plain prose, no markdown, no bullet points, no headings.`;
+Write a short, honest 2-3 sentence summary for a shopper deciding whether to buy this. Blend the product's own description with what reviewers actually say (if any reviews exist) — call out genuine praise and any recurring complaints. Only mention reviews listed above; if there are none, don't imply there are. Plain prose, no markdown, no bullet points, no headings.`;
 
   try {
     const { text } = await generateText({
       model: groq("openai/gpt-oss-120b"),
       prompt,
     });
-    const summary = text.trim();
-    if (summary) await saveAiSummary(product.id, summary, productReviews.length);
-    return summary || null;
+    return text.trim() || null;
   } catch {
     // AI summary is a nice-to-have — the PDP works fine without it.
-    return cached?.aiSummary ?? null;
+    return null;
   }
 }
