@@ -124,10 +124,21 @@ export async function decrementStock(
 ): Promise<void> {
   for (const item of items) {
     if (item.variantId) {
-      await db
+      const [variant] = await db
         .update(productVariants)
         .set({ stock: sql`greatest(${productVariants.stock} - ${item.quantity}, 0)` })
-        .where(eq(productVariants.id, item.variantId));
+        .where(eq(productVariants.id, item.variantId))
+        .returning({ productId: productVariants.productId });
+      // A product's stock is the sum of its versions (cards, the "In stock"
+      // filter and the admin read it) — recompute it so it can't drift.
+      if (variant) {
+        await db
+          .update(products)
+          .set({
+            stock: sql`(select coalesce(sum(${productVariants.stock}), 0) from ${productVariants} where ${productVariants.productId} = ${variant.productId})`,
+          })
+          .where(eq(products.id, variant.productId));
+      }
     } else if (item.productId) {
       await db
         .update(products)
