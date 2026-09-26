@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Lock, MessageCircle, Search } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { getAllCategories } from "@/lib/categories";
 import { siteConfig } from "@/lib/site-config";
@@ -36,20 +36,8 @@ export async function Footer() {
           <div className="max-w-xs">
             <Logo />
             <p className="mt-5 text-sm leading-relaxed text-white/65">
-              Everyday essentials, chosen with care — from headphones to hardcovers.
+              Everyday essentials, chosen with care, from headphones to books.
             </p>
-            <ul className="mt-6 space-y-2.5 text-sm text-white/65">
-              <li className="flex items-center gap-2.5">
-                <Search className="h-4 w-4 shrink-0 text-accent" />
-                <span>
-                  Press <Kbd>/</Kbd> anywhere to search
-                </span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <MessageCircle className="h-4 w-4 shrink-0 text-accent" />
-                Questions? Ask the shopping assistant
-              </li>
-            </ul>
           </div>
           {columns.map((column) => (
             <nav key={column.title} aria-label={column.title}>
@@ -81,13 +69,5 @@ export async function Footer() {
         </div>
       </div>
     </footer>
-  );
-}
-
-function Kbd({ children }: { children: string }) {
-  return (
-    <kbd className="mx-0.5 inline-grid h-5 min-w-5 place-items-center rounded-md border border-white/25 px-1 font-sans text-[0.7rem] text-white">
-      {children}
-    </kbd>
   );
 }
