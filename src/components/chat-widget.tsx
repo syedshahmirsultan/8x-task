@@ -522,18 +522,46 @@ interface RemovalConfirmation {
   onCancel: (toolCallId: string) => void;
 }
 
+/** Loose text form for matching product names inside a reply. */
+function normalizeForMatch(text: string): string {
+  return ` ${text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()} `;
+}
+
+/**
+ * Products the reply actually talks about. Matching on the first two words
+ * of the title ("Lumen Book", "Orbit S2") tolerates the model shortening a
+ * long name. If the reply names none of them (e.g. "here are some options"),
+ * every result is kept.
+ */
+function productsMentionedIn(products: ProductSummary[], replyText: string): ProductSummary[] {
+  const reply = normalizeForMatch(replyText);
+  const mentioned = products.filter((p) => {
+    const name = normalizeForMatch(p.title).trim().split(" ").slice(0, 2).join(" ");
+    return name.length > 0 && reply.includes(` ${name} `);
+  });
+  return mentioned.length ? mentioned : products;
+}
+
 function ToolResult({
   toolName,
   output,
   size,
   toolCallId,
   removal,
+  replyText,
 }: {
   toolName: string;
   output: unknown;
   size: Size;
   toolCallId: string;
   removal: RemovalConfirmation;
+  /** The assistant's text in this reply — search cards only show products it names. */
+  replyText: string;
 }) {
   if (!output || typeof output !== "object") return null;
   const data = output as Record<string, unknown>;
@@ -543,12 +571,16 @@ function ToolResult({
   }
 
   if (toolName === "search_products" && Array.isArray(data.products)) {
-    const products = (data.products as ProductSummary[]).slice(
+    // Wait for the reply to start, then show only the products it names —
+    // a search can return things the answer deliberately left out.
+    if (!replyText.trim()) return null;
+    const products = productsMentionedIn(data.products as ProductSummary[], replyText).slice(
       0,
       size === "full" ? 4 : 3,
     );
-    if (products.length === 0)
-      return <p className="text-xs text-gray-500 italic">No matches found.</p>;
+    // Nothing to show (no match, or every product was already shown earlier
+    // in this reply) — stay silent; the assistant's text explains it.
+    if (products.length === 0) return null;
     const twoColumns = size === "full" && products.length > 1;
     return (
       <div
@@ -1224,6 +1256,7 @@ export function ChatWidget() {
                     const isLastGroup = groupIndex === groups.length - 1;
                     const canRetry = group.role === "assistant" || isLastGroup;
                     const { flat, order } = buildDisplayParts(group.messages);
+                    const groupReplyText = group.messages.map(getMessageText).join(" ");
                     // Recomputed fresh every render (pure function of this
                     // group's parts) — see computeToolOutputOverrides for why
                     // this can't be a mutable Set threaded through ToolResult.
@@ -1293,6 +1326,7 @@ export function ChatWidget() {
                                         size={size}
                                         toolCallId={toolPart.toolCallId}
                                         removal={removal}
+                                        replyText={groupReplyText}
                                       />
                                     )}
                                 </div>
