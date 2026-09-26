@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { SaveIndicator, type SaveStatus } from "@/components/admin/save-indicator";
 
 interface Props {
   id: string;
@@ -14,7 +15,7 @@ export function AdminVariantRow({ id, label, priceCents, stock }: Props) {
   const initialPrice = (priceCents / 100).toFixed(2);
   const [price, setPrice] = useState(initialPrice);
   const [stockValue, setStockValue] = useState(stock);
-  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<SaveStatus>("idle");
   const savedRef = useRef({ price: initialPrice, stock });
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export function AdminVariantRow({ id, label, priceCents, stock }: Props) {
     if (unchanged || Number.isNaN(priceNumber) || priceNumber < 0) return;
 
     const timeout = setTimeout(async () => {
-      setSaving(true);
+      setStatus("saving");
       try {
         const res = await fetch(`/api/admin/variants/${id}`, {
           method: "PATCH",
@@ -33,11 +34,11 @@ export function AdminVariantRow({ id, label, priceCents, stock }: Props) {
         });
         if (!res.ok) throw new Error();
         savedRef.current = { price, stock: stockValue };
-        toast.success(`${label} updated.`);
+        setStatus("saved");
+        setTimeout(() => setStatus((s) => (s === "saved" ? "idle" : s)), 1800);
       } catch {
-        toast.error("Couldn't save changes.");
-      } finally {
-        setSaving(false);
+        setStatus("idle");
+        toast.error(`Couldn't save ${label}.`);
       }
     }, 800);
 
@@ -45,12 +46,27 @@ export function AdminVariantRow({ id, label, priceCents, stock }: Props) {
   }, [id, price, stockValue, label]);
 
   return (
-    <tr className="border-b border-border/60 bg-background/40 text-xs">
+    <tr className="bg-paper-2/40 text-xs">
       <td />
-      <td className="py-1.5 pr-4 pl-6 text-gray-500">↳ {label}</td>
-      <td className="py-1.5 pr-4">
+      <td className="py-2 pr-4 pl-4 text-ink-2">
+        <span className="flex items-center gap-2">
+          ↳ {label}
+          {stockValue === 0 ? (
+            <span className="rounded-full bg-accent-strong/10 px-2 py-0.5 text-[0.7rem] font-semibold text-accent-strong">
+              Sold out
+            </span>
+          ) : (
+            stockValue <= 5 && (
+              <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[0.7rem] font-semibold text-ink">
+                {stockValue} left
+              </span>
+            )
+          )}
+        </span>
+      </td>
+      <td className="py-2 pr-4">
         <div className="flex items-center gap-1">
-          <span className="text-gray-400">$</span>
+          <span className="text-muted">$</span>
           <input
             value={price}
             onChange={(e) => setPrice(e.target.value)}
@@ -59,7 +75,7 @@ export function AdminVariantRow({ id, label, priceCents, stock }: Props) {
           />
         </div>
       </td>
-      <td className="py-1.5 pr-4">
+      <td className="py-2 pr-4">
         <input
           type="number"
           min={0}
@@ -68,7 +84,9 @@ export function AdminVariantRow({ id, label, priceCents, stock }: Props) {
           className="input-field w-16 py-1 text-xs"
         />
       </td>
-      <td className="py-1.5 text-gray-400">{saving ? "Saving…" : null}</td>
+      <td className="py-2 pr-5 text-right">
+        <SaveIndicator status={status} />
+      </td>
     </tr>
   );
 }

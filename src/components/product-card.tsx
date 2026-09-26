@@ -1,55 +1,105 @@
 import Image from "next/image";
 import Link from "next/link";
+import { QuickAddButton } from "@/components/quick-add-button";
 import type { Product } from "@/data/types";
 import { formatPrice } from "@/lib/format";
+
+/** At or below this, the card says how many are left. */
+const LOW_STOCK = 5;
 
 export function ProductCard({
   product,
   className = "",
-  ariaHidden = false,
+  priority = false,
+  style,
 }: {
   product: Product;
-  /** Extra classes on the outer <li> — e.g. a fixed width for horizontal rails. */
+  /** Extra classes on the outer <li> — e.g. a fixed width inside a rail. */
   className?: string;
-  /** True for the looping duplicate copy in an auto-scrolling rail — hides it from assistive tech and keyboard tabbing. */
-  ariaHidden?: boolean;
+  priority?: boolean;
+  style?: React.CSSProperties;
 }) {
-  const hasDiscount =
-    product.compareAtPrice !== undefined && product.compareAtPrice > product.price;
+  const href = `/products/${product.slug}`;
+  const onSale = product.compareAtPrice !== undefined && product.compareAtPrice > product.price;
+  const discount = onSale ? Math.round((1 - product.price / product.compareAtPrice!) * 100) : 0;
+  // On hover the photo crossfades to the next version's photo — a preview of
+  // what else is on offer without opening the product.
+  const [primary, secondary] = product.images;
+  const versionImages = (product.variants ?? []).flatMap((v) => (v.image ? [v.image] : [])).slice(0, 4);
 
   return (
     <li
-      className={`group overflow-hidden rounded-xl border border-border bg-white shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-link/30 hover:shadow-lg ${className}`}
-      aria-hidden={ariaHidden || undefined}
+      style={style}
+      className={`group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-ink/[0.06] transition-[transform,box-shadow] duration-300 ease-(--ease-out) hover:-translate-y-1 hover:shadow-[0_22px_40px_-24px_rgb(19_25_33/0.45)] motion-reduce:hover:translate-y-0 ${className}`}
     >
-      <Link
-        href={`/products/${product.slug}`}
-        tabIndex={ariaHidden ? -1 : undefined}
-        className="block cursor-pointer"
-      >
-        <div className="relative aspect-square overflow-hidden bg-background">
+      <div className="relative aspect-square overflow-hidden bg-surface">
+        <div className="absolute inset-0">
           <Image
-            src={product.images[0]}
-            alt={product.title}
+            src={primary}
+            alt=""
             fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className="object-cover transition-transform duration-300 ease-out group-hover:scale-110"
+            priority={priority}
+            sizes="(min-width: 1280px) 20vw, (min-width: 768px) 30vw, 50vw"
+            className="object-cover transition-transform duration-700 ease-(--ease-out) group-hover:scale-[1.04] motion-reduce:transition-none"
           />
+          {secondary && (
+            <Image
+              src={secondary}
+              alt=""
+              fill
+              sizes="(min-width: 1280px) 20vw, (min-width: 768px) 30vw, 50vw"
+              className="object-cover opacity-0 transition-opacity duration-500 ease-(--ease-out) group-hover:opacity-100"
+            />
+          )}
         </div>
-        <div className="space-y-1.5 p-3">
-          <p className="line-clamp-2 min-h-10 text-sm text-foreground transition-colors group-hover:text-link">
+        {onSale && (
+          <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-accent-strong px-2.5 py-1 text-xs font-semibold text-white tabular-nums">
+            −{discount}%
+          </span>
+        )}
+        <div className="absolute right-3 bottom-3 z-10">
+          <QuickAddButton product={product} />
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-4">
+        <p className="text-xs text-muted">{product.brand}</p>
+        <h3 className="mt-1 line-clamp-2 min-h-[2.75em] text-[0.95rem] leading-snug font-medium text-ink">
+          {/* The ::after stretches this link over the whole card, so the
+              entire card is clickable while staying a single tab stop. */}
+          <Link href={href} className="after:absolute after:inset-0 after:content-['']">
             {product.title}
+          </Link>
+        </h3>
+        {product.stock === 0 ? (
+          <p className="mt-1.5 text-xs font-medium text-muted">Sold out</p>
+        ) : (
+          product.stock <= LOW_STOCK && (
+            <p className="mt-1.5 text-xs font-medium text-accent-strong">Only {product.stock} left</p>
+          )
+        )}
+        <div className="mt-auto flex items-center justify-between gap-3 pt-3">
+          <p className="flex items-baseline gap-2 tabular-nums">
+            <span className={`text-base font-bold ${onSale ? "text-accent-strong" : "text-ink"}`}>
+              {formatPrice(product.price)}
+            </span>
+            {onSale && <span className="text-xs text-muted line-through">{formatPrice(product.compareAtPrice!)}</span>}
           </p>
-          <p className="flex items-baseline gap-2">
-            <span className="text-base font-bold text-price">{formatPrice(product.price)}</span>
-            {hasDiscount && (
-              <span className="text-xs text-gray-400 line-through">
-                {formatPrice(product.compareAtPrice!)}
-              </span>
-            )}
-          </p>
+          {versionImages.length > 1 && (
+            <span className="hidden items-center sm:flex" aria-label={`${product.variants!.length} options`}>
+              {versionImages.map((image, i) => (
+                <span
+                  key={image}
+                  className="relative -ml-1.5 h-5 w-5 overflow-hidden rounded-full bg-surface ring-2 ring-white first:ml-0"
+                  style={{ zIndex: versionImages.length - i }}
+                >
+                  <Image src={image} alt="" fill sizes="20px" className="object-cover" />
+                </span>
+              ))}
+            </span>
+          )}
         </div>
-      </Link>
+      </div>
     </li>
   );
 }

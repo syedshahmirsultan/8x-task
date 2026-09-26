@@ -48,7 +48,7 @@ export function AdminCategoryForm({ category, productCount }: { category?: Categ
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap items-start gap-4 rounded-lg border border-border bg-white p-4">
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-start gap-4 rounded-3xl bg-white p-5 ring-1 ring-ink/[0.05]">
       <SingleImageField value={image} onChange={setImage} />
       <div className="grid min-w-60 flex-1 gap-3 sm:grid-cols-2">
         <div>
@@ -84,7 +84,7 @@ export function AdminCategoryForm({ category, productCount }: { category?: Categ
       <button
         type="submit"
         disabled={saving || !dirty}
-        className="cursor-pointer self-center rounded-md bg-brand-secondary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-secondary-hover disabled:cursor-not-allowed disabled:opacity-40"
+        className="h-10 cursor-pointer self-center rounded-full bg-brand px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-secondary-hover disabled:cursor-not-allowed disabled:opacity-35"
       >
         {saving ? "Saving…" : isEdit ? "Save" : "Add category"}
       </button>
